@@ -5,18 +5,13 @@ const wardenController = require("../controllers/wardenController");
 const authenticate = require("../middleware/authMiddleware");
 const checkRole = require("../middleware/roleMiddleware");
 
-router.put(
-  "/approve/:id",
-  authenticate,
-  checkRole(["warden"]),
-  wardenController.wardenApprove
-);
+const {
+ registerStudent,
+ registerParent
+} = require("../controllers/wardenController");
 
-router.put(
-  "/reject/:id",
-  authenticate,
-  checkRole(["warden"]),
-  wardenController.wardenReject
-);
+router.post("/register-student", registerStudent);
+
+router.post("/register-parent", registerParent);
 
 module.exports = router;

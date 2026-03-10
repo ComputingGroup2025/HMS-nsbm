@@ -1,56 +1,48 @@
 const pool = require("../config/db");
 const logOutingHistory = require("../utils/logOutingHistory");
 
-exports.createOuting = async (req, res) => {
+exports.createOuting = async (req,res)=>{
 
-  try {
+  try{
 
     const {
-      type,
+      student_id,
+      room_number,
       destination,
-      vehicle_number,
+      reason,
       leaving_date,
       leaving_time,
-      emergency
+      return_date,
+      return_time
     } = req.body;
 
-    const studentId = req.user.id;
-
-    const result = await pool.query(
+    await pool.query(
       `INSERT INTO outing_requests
-      (student_id, type, destination, vehicle_number, leaving_date, leaving_time, emergency, status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,'pending_parent')
-      RETURNING id`,
+      (student_id,room_number,destination,reason,leaving_date,leaving_time,return_date,return_time)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [
-        studentId,
-        type,
+        student_id,
+        room_number,
         destination,
-        vehicle_number,
+        reason,
         leaving_date,
         leaving_time,
-        emergency
+        return_date,
+        return_time
       ]
     );
 
-    const outingId = result.rows[0].id;
-
-    await logOutingHistory(
-      outingId,
-      "request_created",
-      studentId
-    );
-
-    res.status(201).json({
-      message: "Outing request created",
-      outing_id: outingId
+    res.json({
+      message:"Outing request created"
     });
 
-  } catch (error) {
+  }
+  catch(err){
 
-    console.error(error);
+    console.log(err);
 
     res.status(500).json({
-      message: "Server error"
+      message:"Server error"
     });
 
   }

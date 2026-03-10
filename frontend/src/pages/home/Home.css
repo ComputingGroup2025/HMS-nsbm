@@ -1,0 +1,71 @@
+.home{
+
+  min-height:100vh;
+  background:#020617;
+}
+
+.home-body{
+
+  text-align:center;
+
+  padding:80px 40px;
+}
+
+.home-body h1{
+
+  color:white;
+  font-size:40px;
+  margin-top: -10px;
+}
+
+.subtitle{
+
+  color:#94a3b8;
+  margin-top:10px;
+}
+
+.roles{
+
+  margin-top:60px;
+
+  display:flex;
+  justify-content:center;
+  gap:40px;
+}
+
+.about-section{
+
+  margin-top:100px;
+
+  background:#1e293b;
+
+  padding:60px;
+
+  border-radius:12px;
+
+  width:80%;
+
+  margin-left:auto;
+  margin-right:auto;
+
+  color:white;
+}
+
+.about-grid{
+
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:30px;
+  margin-top:30px;
+}
+
+footer{
+
+  text-align:center;
+
+  margin-top:60px;
+
+  padding:30px;
+
+  color:#94a3b8;
+}
