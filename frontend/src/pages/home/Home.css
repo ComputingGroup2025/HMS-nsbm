@@ -16,12 +16,14 @@
   color:white;
   font-size:40px;
   margin-top: -10px;
+  margin-left:94px;
 }
 
 .subtitle{
 
   color:#94a3b8;
   margin-top:10px;
+  margin-left:94px;
 }
 
 .roles{
@@ -31,32 +33,41 @@
   display:flex;
   justify-content:center;
   gap:40px;
+  margin-left:94px;
 }
 
 .about-section{
 
-  margin-top:100px;
-
-  background:#1e293b;
-
-  padding:60px;
-
-  border-radius:12px;
-
-  width:80%;
-
-  margin-left:auto;
-  margin-right:auto;
-
-  color:white;
+  margin:96px auto 0;
+  max-width:960px;
+  background:radial-gradient(circle at top left,rgba(59,130,246,0.15),transparent 55%),
+             radial-gradient(circle at bottom right,rgba(56,189,248,0.15),transparent 55%),
+             #020617;
+  padding:40px 48px 46px;
+  border-radius:18px;
+  border:1px solid rgba(148,163,184,0.25);
+  box-shadow:0 20px 60px rgba(15,23,42,0.85);
+  color:#e5e7eb;
+  text-align:left;
 }
 
 .about-grid{
 
   display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:30px;
-  margin-top:30px;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:24px 32px;
+  margin-top:28px;
+}
+
+.about-grid h4{
+  margin:0 0 6px;
+  font-size:15px;
+}
+
+.about-grid p{
+  margin:0;
+  font-size:13px;
+  color:#cbd5f5;
 }
 
 footer{

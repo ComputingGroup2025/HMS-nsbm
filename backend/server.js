@@ -9,6 +9,7 @@ const parentRoutes = require("./routes/parentRoutes");
 const wardenRoutes = require("./routes/wardenRoutes");
 const securityRoutes = require("./routes/securityRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use("/api/parent", parentRoutes);
 app.use("/api/warden", wardenRoutes);
 app.use("/api/security", securityRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/users", userRoutes);
 
 app.get("/", (req, res) => {
   res.send("Hostel Management API Running...");

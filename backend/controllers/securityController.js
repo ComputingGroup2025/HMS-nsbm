@@ -77,3 +77,39 @@ exports.securityReturn = async (req, res) => {
   }
 
 };
+
+
+// For security: list today's outings and going-home notifications
+exports.listTodayOutings = async (req, res) => {
+
+  try {
+
+    const result = await pool.query(
+      `SELECT id,
+              student_id,
+              room_number,
+              destination,
+              type AS reason,
+              leaving_date,
+              leaving_time,
+              return_date,
+              return_time,
+              status,
+              left_time,
+              arrival_time
+       FROM outing_requests
+       WHERE status IN ('approved','student_left')
+       ORDER BY leaving_date, leaving_time ASC`
+    );
+
+    res.json(result.rows);
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: "Server error"
+    });
+
+  }
+
+};

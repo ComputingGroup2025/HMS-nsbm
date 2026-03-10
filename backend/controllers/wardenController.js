@@ -86,17 +86,33 @@ exports.registerStudent = async (req,res)=>{
 
   const hashedPassword = await bcrypt.hash(password,10);
 
+  // Insert into students table
   await pool.query(
-   `INSERT INTO students
-   (full_name,student_id,room_number,email,password)
-   VALUES ($1,$2,$3,$4,$5)`,
-   [
-    full_name,
-    student_id,
-    room_number,
-    email,
-    hashedPassword
-   ]
+    `INSERT INTO students
+     (full_name,student_id,room_number,email,password)
+     VALUES ($1,$2,$3,$4,$5)`,
+    [
+      full_name,
+      student_id,
+      room_number,
+      email,
+      hashedPassword
+    ]
+  );
+
+  // Also create corresponding row in users table for auth/foreign keys
+  await pool.query(
+    `INSERT INTO users
+     (name,email,password,role,student_id,parent_password)
+     VALUES ($1,$2,$3,$4,$5,$6)`,
+    [
+      full_name,
+      email,
+      hashedPassword,
+      "student",
+      student_id,
+      null
+    ]
   );
 
   res.json({

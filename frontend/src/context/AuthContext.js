@@ -23,8 +23,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        const response = await getCurrentUser();
-        setUser(response.data);
+        const data = await getCurrentUser();
+        setUser(data);
       }
     } catch (error) {
       console.error('Auth check failed:', error);

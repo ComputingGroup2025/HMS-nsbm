@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
 import {
   registerStudentByWarden,
   registerParentByWarden,
-  registerSecurityByWarden
+  registerSecurityByWarden,
+  getWardenDashboard,
+  wardenApproveOuting,
+  wardenRejectOuting
 } from "../../services/api";
 import "./WardenDashboard.css";
 
@@ -36,6 +39,99 @@ function WardenDashboard() {
 
   const [statusMessage, setStatusMessage] = useState("");
   const [statusType, setStatusType] = useState("");
+
+  const [dashboardData, setDashboardData] = useState({
+    today_outings: [],
+    today_going_homes: [],
+    parent_pending: [],
+    warden_pending: []
+  });
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
+
+  useEffect(() => {
+    if (activeSection === "today") {
+      fetchDashboard();
+    }
+  }, [activeSection]);
+
+  const fetchDashboard = async () => {
+    try {
+      const data = await getWardenDashboard();
+      setDashboardData({
+        today_outings: data.today_outings || [],
+        today_going_homes: data.today_going_homes || [],
+        parent_pending: data.parent_pending || [],
+        warden_pending: data.warden_pending || []
+      });
+      setLoadingDashboard(false);
+    } catch (error) {
+      console.error("Error loading warden dashboard", error);
+      setLoadingDashboard(false);
+    }
+  };
+
+  const handleWardenApprove = async (outingId) => {
+    try {
+      // Optimistic UI: mark as approved
+      setDashboardData((prev) => ({
+        ...prev,
+        today_outings: prev.today_outings.map((o) =>
+          o.id === outingId ? { ...o, status: "approved" } : o
+        )
+      }));
+      await wardenApproveOuting(outingId);
+      fetchDashboard();
+    } catch (error) {
+      console.error("Error approving outing as warden", error);
+    }
+  };
+
+  const handleWardenReject = async (outingId) => {
+    try {
+      setDashboardData((prev) => ({
+        ...prev,
+        today_outings: prev.today_outings.map((o) =>
+          o.id === outingId ? { ...o, status: "rejected_by_warden" } : o
+        )
+      }));
+      await wardenRejectOuting(outingId);
+      fetchDashboard();
+    } catch (error) {
+      console.error("Error rejecting outing as warden", error);
+    }
+  };
+
+  const statusLabel = (status) => {
+    if (status === "pending_parent") return "Pending (Parent)";
+    if (status === "pending_warden") return "Pending (Warden)";
+    if (status === "approved") return "Approved";
+    if (status === "rejected_by_parent") return "Rejected by Parent";
+    if (status === "rejected_by_warden") return "Rejected by Warden";
+    if (status === "student_left") return "Student Left";
+    if (status === "student_returned") return "Student Returned";
+    return status || "";
+  };
+
+  const formatDateTime = (date, time) => {
+    if (!date) return "";
+    try {
+      const base = new Date(date);
+      if (time) {
+        const [h = "0", m = "0"] = String(time).split(":");
+        base.setHours(Number(h), Number(m));
+      }
+      return base.toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+      });
+    } catch {
+      return `${date} ${time || ""}`;
+    }
+  };
 
   const showStatus = (type, message) => {
     setStatusType(type);
@@ -143,6 +239,14 @@ function WardenDashboard() {
               onClick={() => setActiveSection("staff")}
             >
               Register Staff
+            </button>
+
+            <button
+              type="button"
+              className={`sidebar-btn ${activeSection === "today" ? "active" : ""}`}
+              onClick={() => setActiveSection("today")}
+            >
+              Today's Movements
             </button>
           </aside>
 
@@ -314,6 +418,95 @@ function WardenDashboard() {
 
                     <button type="submit" className="primary-btn">Register Security</button>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {activeSection === "today" && (
+              <div className="today-grid">
+                <div className="today-card">
+                  <h2>Today's Outings</h2>
+                  {loadingDashboard ? (
+                    <p>Loading...</p>
+                  ) : dashboardData.today_outings.length === 0 ? (
+                    <p className="today-empty">No outings scheduled for today.</p>
+                  ) : (
+                    <table className="today-table">
+                      <thead>
+                        <tr>
+                          <th>Student</th>
+                          <th>Student ID</th>
+                          <th>Destination</th>
+                          <th>Leaving</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboardData.today_outings.map((o) => (
+                          <tr key={o.id}>
+                            <td>{o.name}</td>
+                            <td>{o.student_id}</td>
+                            <td>{o.destination}</td>
+                            <td>{formatDateTime(o.leaving_date, o.leaving_time)}</td>
+                            <td>
+                              <span className={`today-status-pill today-status-${o.status}`}>
+                                {statusLabel(o.status)}
+                              </span>
+                            </td>
+                            <td>
+                              {o.status === "pending_warden" && (
+                                <div className="warden-table-actions">
+                                  <button
+                                    type="button"
+                                    className="warden-action-btn reject"
+                                    onClick={() => handleWardenReject(o.id)}
+                                  >
+                                    Reject
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="warden-action-btn approve"
+                                    onClick={() => handleWardenApprove(o.id)}
+                                  >
+                                    Approve
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                <div className="today-card">
+                  <h2>Today's Going Homes</h2>
+                  {loadingDashboard ? (
+                    <p>Loading...</p>
+                  ) : dashboardData.today_going_homes.length === 0 ? (
+                    <p className="today-empty">No going home notifications for today.</p>
+                  ) : (
+                    <table className="today-table">
+                      <thead>
+                        <tr>
+                          <th>Student</th>
+                          <th>Student ID</th>
+                          <th>Leaving</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboardData.today_going_homes.map((o) => (
+                          <tr key={o.id}>
+                            <td>{o.name}</td>
+                            <td>{o.student_id}</td>
+                            <td>{formatDateTime(o.leaving_date, o.leaving_time)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             )}

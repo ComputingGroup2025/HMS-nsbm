@@ -14,6 +14,13 @@
   border-bottom:1px solid rgba(255,255,255,0.08);
 }
 
+.navbar-actions{
+
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
 .navbar-center{
 
   display:flex;
@@ -26,6 +33,7 @@
 
   width:140px;
   height: 100px;
+  margin-left:54px;
 }
 
 .navbar-title{
@@ -51,6 +59,7 @@
   border:none;
 
   padding:10px 16px;
+  margin-right:54px;
 
   border-radius:10px;
 

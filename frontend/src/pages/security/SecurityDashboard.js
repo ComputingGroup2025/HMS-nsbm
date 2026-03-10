@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../../components/Layout';
-import { getAllOutings, checkOut, checkIn } from '../../services/api';
+import {
+  getTodayOutingsForSecurity
+} from '../../services/api';
+import api from '../../services/api';
+import './SecurityDashboard.css';
 
 const SecurityDashboard = () => {
-  const [approvedOutings, setApprovedOutings] = useState([]);
-  const [activeOutings, setActiveOutings] = useState([]);
+  const [todayOutings, setTodayOutings] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [searchId, setSearchId] = useState('');
 
   useEffect(() => {
     fetchOutings();
@@ -14,17 +18,8 @@ const SecurityDashboard = () => {
 
   const fetchOutings = async () => {
     try {
-      const response = await getAllOutings();
-      const allOutings = response.data || [];
-      
-      // Filter approved outings ready for checkout
-      const approved = allOutings.filter(o => o.status === 'approved');
-      setApprovedOutings(approved);
-      
-      // Filter active outings (checked out)
-      const active = allOutings.filter(o => o.status === 'checked_out');
-      setActiveOutings(active);
-      
+      const data = await getTodayOutingsForSecurity();
+      setTodayOutings(data || []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching outings:', error);
@@ -32,95 +27,124 @@ const SecurityDashboard = () => {
     }
   };
 
-  const handleCheckOut = async (outingId) => {
+  const markExit = async (outingId) => {
     try {
-      await checkOut(outingId);
+      await api.put(`/security/exit/${outingId}`);
       fetchOutings();
     } catch (error) {
-      console.error('Error checking out student:', error);
-      alert('Failed to check out student');
+      console.error('Error marking exit:', error);
+      alert('Failed to mark student as left');
     }
   };
 
-  const handleCheckIn = async (outingId) => {
+  const markReturn = async (outingId) => {
     try {
-      await checkIn(outingId);
+      await api.put(`/security/return/${outingId}`);
       fetchOutings();
     } catch (error) {
-      console.error('Error checking in student:', error);
-      alert('Failed to check in student');
+      console.error('Error marking return:', error);
+      alert('Failed to mark student as returned');
     }
   };
 
   if (loading) return <div className="loading">Loading...</div>;
 
+  const filteredOutings = searchId
+    ? todayOutings.filter(o =>
+        o.student_id.toLowerCase().includes(searchId.toLowerCase())
+      )
+    : todayOutings;
+
+  const readyForExit = filteredOutings.filter(o => o.status === 'approved');
+  const currentlyOut = filteredOutings.filter(o => o.status === 'student_left');
+
   return (
     <Layout user={user}>
       <div className="security-dashboard">
-        <h1>Security Dashboard</h1>
-        
-        <div className="stats-summary">
-          <div className="stat-card">
-            <h3>Ready for Checkout</h3>
-            <p className="stat-number">{approvedOutings.length}</p>
+        <div className="security-top">
+          <div>
+            <h1>Security Dashboard</h1>
           </div>
-          <div className="stat-card">
-            <h3>Currently Out</h3>
-            <p className="stat-number">{activeOutings.length}</p>
+          <div className="security-summary">
+            <div className="security-summary-card">
+              <h3>Ready for Exit</h3>
+              <p>{readyForExit.length}</p>
+            </div>
+            <div className="security-summary-card">
+              <h3>Currently Out</h3>
+              <p>{currentlyOut.length}</p>
+            </div>
+          </div>
+          <div className="search-section">
+            <h2>Search by Student ID</h2>
+            <input
+              type="text"
+              placeholder="Enter student ID"
+              value={searchId}
+              onChange={(e) => setSearchId(e.target.value)}
+            />
           </div>
         </div>
 
-        <div className="checkout-section">
-          <h2>Approved Outings - Ready for Checkout</h2>
-          {approvedOutings.length === 0 ? (
-            <p>No approved outings awaiting checkout</p>
-          ) : (
-            <div className="outings-list">
-              {approvedOutings.map((outing) => (
-                <div key={outing._id} className="outing-card">
-                  <div className="outing-header">
-                    <h3>{outing.student?.name}</h3>
-                    <span className="student-id">{outing.student?.studentId}</span>
+        <div className="security-content">
+          <div className="security-card">
+            <h2>Approved Outings - Ready for Exit</h2>
+            {readyForExit.length === 0 ? (
+              <p className="security-empty">No approved outings awaiting exit.</p>
+            ) : (
+              <div className="outings-list">
+                {readyForExit.map((outing) => (
+                  <div key={outing.id} className="outing-card">
+                    <div className="outing-header">
+                      <h3>{outing.student_id}</h3>
+                      <span className="student-id">Room {outing.room_number}</span>
+                    </div>
+                    <div className="outing-details">
+                      <p><strong>Destination:</strong> {outing.destination}</p>
+                      <p>
+                        <strong>Leaving:</strong>{' '}
+                        {outing.leaving_date} {outing.leaving_time}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => markExit(outing.id)}
+                      className="checkout-btn"
+                    >
+                      Mark Left
+                    </button>
                   </div>
-                  <div className="outing-details">
-                    <p><strong>Destination:</strong> {outing.destination}</p>
-                    <p><strong>Purpose:</strong> {outing.purpose}</p>
-                    <p><strong>Departure:</strong> {new Date(outing.outingDate).toLocaleString()}</p>
-                    <p><strong>Expected Return:</strong> {new Date(outing.expectedReturnDate).toLocaleString()}</p>
-                  </div>
-                  <button onClick={() => handleCheckOut(outing._id)} className="checkout-btn">
-                    Check Out
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-        <div className="checkin-section">
-          <h2>Students Currently Out - Ready for Check-in</h2>
-          {activeOutings.length === 0 ? (
-            <p>No students currently out</p>
-          ) : (
-            <div className="outings-list">
-              {activeOutings.map((outing) => (
-                <div key={outing._id} className="outing-card active">
-                  <div className="outing-header">
-                    <h3>{outing.student?.name}</h3>
-                    <span className="student-id">{outing.student?.studentId}</span>
+          <div className="security-card">
+            <h2>Students Currently Out - Mark Return</h2>
+            {currentlyOut.length === 0 ? (
+              <p className="security-empty">No students currently out.</p>
+            ) : (
+              <div className="outings-list">
+                {currentlyOut.map((outing) => (
+                  <div key={outing.id} className="outing-card">
+                    <div className="outing-header">
+                      <h3>{outing.student_id}</h3>
+                      <span className="student-id">Room {outing.room_number}</span>
+                    </div>
+                    <div className="outing-details">
+                      <p><strong>Destination:</strong> {outing.destination}</p>
+                      <p><strong>Left At:</strong> {outing.left_time}</p>
+                    </div>
+                    <button
+                      onClick={() => markReturn(outing.id)}
+                      className="checkin-btn"
+                    >
+                      Mark Arrived
+                    </button>
                   </div>
-                  <div className="outing-details">
-                    <p><strong>Destination:</strong> {outing.destination}</p>
-                    <p><strong>Checked Out:</strong> {outing.actualDepartureDate ? new Date(outing.actualDepartureDate).toLocaleString() : 'N/A'}</p>
-                    <p><strong>Expected Return:</strong> {new Date(outing.expectedReturnDate).toLocaleString()}</p>
-                  </div>
-                  <button onClick={() => handleCheckIn(outing._id)} className="checkin-btn">
-                    Check In
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Layout>

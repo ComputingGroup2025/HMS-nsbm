@@ -1,35 +1,27 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
+import { getOutingHistory } from "../../services/api";
 import "./OutingHistory.css";
 
 function OutingHistory() {
 
-  const [history,setHistory] = useState([]);
+  const [history, setHistory] = useState([]);
 
-  useEffect(()=>{
+  useEffect(() => {
 
     fetchHistory();
 
-  },[]);
+  }, []);
 
   const fetchHistory = async () => {
 
-    try{
+    try {
 
-      const res = await axios.get(
-        "http://localhost:5000/api/outings/history",
-        {
-          headers:{
-            Authorization:`Bearer ${localStorage.getItem("token")}`
-          }
-        }
-      );
+      const data = await getOutingHistory();
+      setHistory(data);
 
-      setHistory(res.data);
-
-    }catch(err){
+    } catch (err) {
 
       console.error(err);
 

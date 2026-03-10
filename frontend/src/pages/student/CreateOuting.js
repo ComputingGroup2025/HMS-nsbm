@@ -7,34 +7,40 @@ import "./CreateOuting.css";
 
 function CreateOuting() {
 
-  const [type,setType] = useState("outing");
-  const [destination,setDestination] = useState("");
-  const [vehicleNumber,setVehicleNumber] = useState("");
-  const [leavingDate,setLeavingDate] = useState("");
-  const [leavingTime,setLeavingTime] = useState("");
-  const [emergency,setEmergency] = useState(false);
-  const [studentId,setStudentId] = useState("");
-  const [roomNumber,setRoomNumber] = useState("");
+  const [type, setType] = useState("outing");
+  const [destination, setDestination] = useState("");
+  const [vehicleNumber, setVehicleNumber] = useState("");
+  const [leavingDate, setLeavingDate] = useState("");
+  const [leavingTime, setLeavingTime] = useState("");
+  const [emergency, setEmergency] = useState(false);
+  const [studentId, setStudentId] = useState("");
+  const [roomNumber, setRoomNumber] = useState("");
+  const [returnDate, setReturnDate] = useState("");
+  const [returnTime, setReturnTime] = useState("");
 
-  const handleSubmit = async(e) => {
+  const handleSubmit = async (e) => {
 
     e.preventDefault();
 
-    try{
+    try {
 
       await axios.post(
         "http://localhost:5000/api/outings/create",
         {
-          type,
+          student_id: studentId,
+          room_number: roomNumber,
           destination,
-          vehicle_number: vehicleNumber,
+          reason: type === "home" ? "going_home" : "outing",
           leaving_date: leavingDate,
           leaving_time: leavingTime,
-          emergency
+          return_date: type === "home" ? null : returnDate,
+          return_time: type === "home" ? null : returnTime,
+          emergency,
+          vehicle_number: vehicleNumber
         },
         {
-          headers:{
-            Authorization:`Bearer ${localStorage.getItem("token")}`
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
           }
         }
       );
@@ -48,11 +54,15 @@ function CreateOuting() {
       setEmergency(false);
       setStudentId("");
       setRoomNumber("");
+      setReturnDate("");
+      setReturnTime("");
 
-    }
-    catch(err){
+    } catch (err) {
 
-      alert("Failed to create request");
+      console.error("Create outing error:", err.response || err);
+      const message =
+        err.response?.data?.message || "Failed to create request";
+      alert(message);
 
     }
 
@@ -114,19 +124,23 @@ function CreateOuting() {
 />
 
 
-              <label>Destination</label>
+              {type === "outing" && (
+                <>
+                  <label>Destination</label>
 
-              <input
-                type="text"
-                placeholder="Enter destination"
-                value={destination}
-                onChange={(e)=>setDestination(e.target.value)}
-              />
+                  <input
+                    type="text"
+                    placeholder="Enter destination"
+                    value={destination}
+                    onChange={(e)=>setDestination(e.target.value)}
+                  />
+                </>
+              )}
 
               
 
 
-              <label>Vehicle Number(Optional)</label>
+              <label>Vehicle Number (Optional)</label>
 
               <input
                 type="text"
@@ -153,6 +167,26 @@ function CreateOuting() {
                 onChange={(e)=>setLeavingTime(e.target.value)}
               />
 
+
+              {type === "outing" && (
+                <>
+                  <label>Expected Return Date</label>
+
+                  <input
+                    type="date"
+                    value={returnDate}
+                    onChange={(e)=>setReturnDate(e.target.value)}
+                  />
+
+                  <label>Expected Return Time</label>
+
+                  <input
+                    type="time"
+                    value={returnTime}
+                    onChange={(e)=>setReturnTime(e.target.value)}
+                  />
+                </>
+              )}
 
               <div className="checkbox-row">
 
