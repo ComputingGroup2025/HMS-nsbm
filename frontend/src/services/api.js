@@ -36,59 +36,34 @@ export const register = async (userData) => {
 };
 
 // Outing API
-export const createOuting = async (outingData) => {
-  const response = await api.post('/outings', outingData);
-  return response.data;
-};
-
 export const getMyOutings = async () => {
-  const response = await api.get('/outings/my-outings');
+  const response = await api.get('/outings/my-requests');
   return response.data;
 };
 
-export const getAllOutings = async () => {
-  const response = await api.get('/outings');
+export const getOutingHistory = async () => {
+  const response = await api.get('/outings/history');
   return response.data;
 };
 
-export const approveOuting = async (outingId, approvalData) => {
-  const response = await api.put(`/outings/${outingId}/approve`, approvalData);
+// Parent approval API
+export const parentApproveOuting = async (outingId) => {
+  const response = await api.put(`/parent/approve/${outingId}`);
   return response.data;
 };
 
-export const rejectOuting = async (outingId, rejectionData) => {
-  const response = await api.put(`/outings/${outingId}/reject`, rejectionData);
-  return response.data;
-};
-
-export const checkOut = async (outingId) => {
-  const response = await api.put(`/outings/${outingId}/checkout`);
-  return response.data;
-};
-
-export const checkIn = async (outingId) => {
-  const response = await api.put(`/outings/${outingId}/checkin`);
+export const parentRejectOuting = async (outingId) => {
+  const response = await api.put(`/parent/reject/${outingId}`);
   return response.data;
 };
 
 // Parent API
-export const getChildren = async () => {
-  const response = await api.get('/parent/children');
+export const getParentOutings = async () => {
+  const response = await api.get('/parent/requests');
   return response.data;
 };
 
-export const getChildrenOutings = async () => {
-  const response = await api.get('/parent/children-outings');
-  return response.data;
-};
-
-// Dashboard API
-export const getDashboardStats = async () => {
-  const response = await api.get('/dashboard/stats');
-  return response.data;
-};
-
-// Warden Registration API
+// Warden Registration & approvals API
 export const registerStudentByWarden = async (studentData) => {
   const response = await api.post('/warden/register-student', studentData);
   return response.data;
@@ -96,6 +71,16 @@ export const registerStudentByWarden = async (studentData) => {
 
 export const registerParentByWarden = async (parentData) => {
   const response = await api.post('/warden/register-parent', parentData);
+  return response.data;
+};
+
+export const wardenApproveOuting = async (outingId) => {
+  const response = await api.put(`/warden/approve/${outingId}`);
+  return response.data;
+};
+
+export const wardenRejectOuting = async (outingId) => {
+  const response = await api.put(`/warden/reject/${outingId}`);
   return response.data;
 };
 
@@ -116,6 +101,18 @@ export const registerSecurityByWarden = async (securityData) => {
     }
     throw error;
   }
+};
+
+// Warden dashboard API
+export const getWardenDashboard = async () => {
+  const response = await api.get('/dashboard/warden');
+  return response.data;
+};
+
+// Security API
+export const getTodayOutingsForSecurity = async () => {
+  const response = await api.get('/security/today');
+  return response.data;
 };
 
 // User API

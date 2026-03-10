@@ -19,4 +19,12 @@ router.put(
   parentController.parentReject
 );
 
+// List all outings for the child of this parent
+router.get(
+  "/requests",
+  authenticate,
+  checkRole(["parent"]),
+  parentController.listChildOutings
+);
+
 module.exports = router;

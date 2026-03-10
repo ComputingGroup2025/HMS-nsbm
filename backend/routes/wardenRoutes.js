@@ -6,12 +6,38 @@ const authenticate = require("../middleware/authMiddleware");
 const checkRole = require("../middleware/roleMiddleware");
 
 const {
- registerStudent,
- registerParent
+  registerStudent,
+  registerParent
 } = require("../controllers/wardenController");
 
-router.post("/register-student", registerStudent);
+// Warden-only registration endpoints
+router.post(
+  "/register-student",
+  authenticate,
+  checkRole(["warden"]),
+  registerStudent
+);
 
-router.post("/register-parent", registerParent);
+router.post(
+  "/register-parent",
+  authenticate,
+  checkRole(["warden"]),
+  registerParent
+);
+
+// Warden approvals for outings
+router.put(
+  "/approve/:id",
+  authenticate,
+  checkRole(["warden"]),
+  wardenController.wardenApprove
+);
+
+router.put(
+  "/reject/:id",
+  authenticate,
+  checkRole(["warden"]),
+  wardenController.wardenReject
+);
 
 module.exports = router;

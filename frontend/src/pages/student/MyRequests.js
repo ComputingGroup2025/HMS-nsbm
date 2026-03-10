@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
-import axios from "axios";
+import { getMyOutings } from "../../services/api";
 import "./MyRequests.css";
 
 function MyRequests() {
 
-  const [requests,setRequests] = useState([]);
+  const [requests, setRequests] = useState([]);
 
   useEffect(() => {
 
@@ -16,21 +16,12 @@ function MyRequests() {
 
   const fetchRequests = async () => {
 
-    try{
+    try {
 
-      const res = await axios.get(
-        "http://localhost:5000/api/outings/my-requests",
-        {
-          headers:{
-            Authorization:`Bearer ${localStorage.getItem("token")}`
-          }
-        }
-      );
+      const data = await getMyOutings();
+      setRequests(data);
 
-      setRequests(res.data);
-
-    }
-    catch(err){
+    } catch (err) {
 
       console.error(err);
 
@@ -60,7 +51,7 @@ function MyRequests() {
 
                 <tr>
                   <th>ID</th>
-                  <th>Type</th>
+                  <th>Reason</th>
                   <th>Destination</th>
                   <th>Date</th>
                   <th>Time</th>
@@ -77,7 +68,7 @@ function MyRequests() {
 
                     <td>{req.id}</td>
 
-                    <td>{req.type}</td>
+                    <td>{req.reason}</td>
 
                     <td>{req.destination}</td>
 

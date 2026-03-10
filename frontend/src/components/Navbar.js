@@ -1,25 +1,19 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./Navbar.css";
 
 import logo from "../assets/images/NSBM-LOGO.png";
 
-function Navbar({ showBackHome = false }) {
+function Navbar() {
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isHome = location.pathname === "/";
 
   return (
 
     <div className="navbar">
-
-      {showBackHome && (
-        <button
-          className="back-home-btn"
-          onClick={() => navigate("/")}
-        >
-          ← Back to Home
-        </button>
-      )}
 
       <div className="navbar-center">
 
@@ -40,6 +34,18 @@ function Navbar({ showBackHome = false }) {
           </p>
 
         </div>
+
+      </div>
+
+      <div className="navbar-actions">
+        {!isHome && (
+          <button
+            className="back-home-btn"
+            onClick={() => navigate("/")}
+          >
+            ← Back to Home
+          </button>
+        )}
 
       </div>
 

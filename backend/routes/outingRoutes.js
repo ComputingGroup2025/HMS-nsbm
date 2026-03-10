@@ -12,4 +12,20 @@ router.post(
   outingController.createOuting
 );
 
+// Student: list own outing requests
+router.get(
+  "/my-requests",
+  authenticate,
+  checkRole(["student"]),
+  outingController.getMyOutings
+);
+
+// Student: detailed outing history timeline
+router.get(
+  "/history",
+  authenticate,
+  checkRole(["student"]),
+  outingController.getOutingHistory
+);
+
 module.exports = router;

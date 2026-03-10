@@ -19,4 +19,12 @@ router.put(
   securityController.securityReturn
 );
 
+// Daily list for security dashboard
+router.get(
+  "/today",
+  authenticate,
+  checkRole(["security"]),
+  securityController.listTodayOutings
+);
+
 module.exports = router;

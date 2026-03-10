@@ -1,37 +1,61 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
-import axios from "axios";
 import "../../components/LoginCard.css";
 
-function ParentLogin(){
-
-  const navigate = useNavigate();
+function ParentLogin() {
 
   const [studentId, setStudentId] = useState("");
   const [parentPassword, setParentPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
 
     e.preventDefault();
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/parent-login", {
-        student_id: studentId,
-        parent_password: parentPassword
+      const deviceId =
+        localStorage.getItem("parentDeviceId") || crypto.randomUUID();
+      localStorage.setItem("parentDeviceId", deviceId);
+
+      const res = await fetch("http://localhost:5000/api/auth/parent-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          student_id: studentId,
+          parent_password: parentPassword,
+          device_id: deviceId
+        })
       });
 
-      /* Save token */
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", res.data.user.role);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Login failed");
+      }
+
+      const data = await res.json();
+
+      /* Save token and role */
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", "parent");
+      localStorage.setItem(
+        "user",
+        JSON.stringify(
+          data.user || {
+            role: "parent",
+            student_id: studentId
+          }
+        )
+      );
 
       /* Redirect to parent dashboard */
       navigate("/parent");
 
     } catch (err) {
 
-      alert(err.response?.data?.message || "Login failed");
+      alert(err.message || "Login failed");
 
     }
 
@@ -92,13 +116,6 @@ function ParentLogin(){
         </div>
 
       </div>
-
-      <button
-        className="back-home-floating"
-        onClick={()=>navigate("/")}
-      >
-        ← Back to Home
-      </button>
 
     </div>
 

@@ -1,0 +1,180 @@
+.security-dashboard{
+  min-height:100vh;
+  background:#020617;
+  color:#e5e7eb;
+  padding:32px 24px 48px;
+}
+
+.security-dashboard h1{
+  margin-top:0;
+  font-size:26px;
+  text-align:center;
+}
+
+.security-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:20px;
+  max-width:1120px;
+  margin:0 auto 24px;
+}
+
+.security-summary{
+  display:flex;
+  gap:12px;
+}
+
+.security-summary-card{
+  background:#0b1220;
+  border-radius:10px;
+  padding:10px 14px;
+  border:1px solid rgba(148,163,184,0.35);
+  min-width:120px;
+}
+
+.security-summary-card h3{
+  margin:0;
+  font-size:12px;
+  text-transform:uppercase;
+  color:#9ca3af;
+}
+
+.security-summary-card p{
+  margin:4px 0 0;
+  font-size:22px;
+  font-weight:700;
+}
+
+.search-section{
+  max-width:320px;
+}
+
+.search-section h2{
+  margin:0 0 6px;
+  font-size:14px;
+}
+
+.search-section input{
+  width:100%;
+  padding:8px 10px;
+  border-radius:8px;
+  border:1px solid #1f2937;
+  background:#020617;
+  color:#e5e7eb;
+}
+
+.search-section input:focus{
+  outline:none;
+  border-color:#3b82f6;
+  box-shadow:0 0 0 2px rgba(59,130,246,0.35);
+}
+
+.security-content{
+  max-width:1120px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+  gap:24px;
+  margin-top:16px;
+}
+
+.security-card{
+  background:#020617;
+  border-radius:14px;
+  padding:18px 18px 22px;
+  border:1px solid rgba(148,163,184,0.25);
+  box-shadow:0 14px 40px rgba(15,23,42,0.85);
+}
+
+.security-card h2{
+  margin:0 0 10px;
+  font-size:18px;
+}
+
+.security-empty{
+  font-size:14px;
+  color:#9ca3af;
+}
+
+.outings-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:8px;
+}
+
+.outing-card{
+  background:#0b1220;
+  border-radius:12px;
+  padding:12px 12px 14px;
+  border:1px solid rgba(148,163,184,0.3);
+}
+
+.outing-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:6px;
+}
+
+.outing-header h3{
+  margin:0;
+  font-size:15px;
+}
+
+.student-id{
+  font-size:12px;
+  color:#9ca3af;
+}
+
+.outing-details{
+  font-size:13px;
+  color:#cbd5f5;
+}
+
+.outing-details p{
+  margin:2px 0;
+}
+
+.checkout-btn,
+.checkin-btn{
+  margin-top:8px;
+  padding:7px 14px;
+  border-radius:999px;
+  border:none;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:600;
+  transition:0.18s ease;
+}
+
+.checkout-btn{
+  background:#ea580c;
+  color:white;
+}
+
+.checkout-btn:hover{
+  background:#c2410c;
+}
+
+.checkin-btn{
+  background:#22c55e;
+  color:#052e16;
+}
+
+.checkin-btn:hover{
+  background:#16a34a;
+}
+
+@media (max-width:768px){
+  .security-top{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .security-summary{
+    width:100%;
+  }
+}
+

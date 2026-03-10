@@ -2,6 +2,11 @@ const pool = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+// In-memory tracking to ensure a parent can only be
+// logged in from a single device at a time.
+// Keyed by parent_id -> device_id
+const activeParentSessions = new Map();
+
 /* ==============================
    Register User
 ============================== */
@@ -150,7 +155,11 @@ exports.login = async (req, res) => {
 
 exports.parentLogin = async (req, res) => {
   try {
-    const { student_id, parent_password } = req.body;
+    const { student_id, parent_password, device_id } = req.body;
+
+    if (!device_id) {
+      return res.status(400).json({ message: "Missing device identifier" });
+    }
 
     const result = await pool.query(
       "SELECT * FROM parents WHERE student_id = $1",
@@ -172,6 +181,16 @@ exports.parentLogin = async (req, res) => {
       return res.status(400).json({ message: "Invalid parent password" });
     }
 
+    const existingDevice = activeParentSessions.get(parent.id);
+
+    if (existingDevice && existingDevice !== device_id) {
+      return res.status(403).json({
+        message: "Parent account is already active on another device"
+      });
+    }
+
+    activeParentSessions.set(parent.id, device_id);
+
     const token = jwt.sign(
       { id: parent.id, role: "parent" },
       process.env.JWT_SECRET,
@@ -180,7 +199,13 @@ exports.parentLogin = async (req, res) => {
 
     res.json({
       message: "Parent login successful",
-      token
+      token,
+      user: {
+        id: parent.id,
+        role: "parent",
+        student_id: parent.student_id,
+        parent_name: parent.parent_name
+      }
     });
 
   } catch (error) {

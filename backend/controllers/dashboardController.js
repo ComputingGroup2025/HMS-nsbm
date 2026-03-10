@@ -47,11 +47,43 @@ exports.getWardenDashboard = async (req, res) => {
        ORDER BY o.left_time DESC`
     );
 
+    // Today's outings / approvals visible to warden
+    const todayOutings = await pool.query(
+      `SELECT o.id,
+              u.name,
+              u.student_id,
+              o.destination,
+              o.leaving_date,
+              o.leaving_time,
+              o.status
+       FROM outing_requests o
+       JOIN users u ON o.student_id = u.id
+       WHERE o.type = 'outing'
+         AND o.status IN ('pending_warden','approved','student_left','student_returned')
+       ORDER BY o.leaving_time ASC`
+    );
+
+    // Today's going homes / home-going notifications (no warden approval needed)
+    const todayGoingHomes = await pool.query(
+      `SELECT o.id,
+              u.name,
+              u.student_id,
+              o.leaving_date,
+              o.leaving_time,
+              o.status
+       FROM outing_requests o
+       JOIN users u ON o.student_id = u.id
+       WHERE o.type = 'home'
+       ORDER BY o.leaving_time ASC`
+    );
+
     res.json({
       parent_pending: parentPending.rows,
       warden_pending: wardenPending.rows,
       outside_students: outsideStudents.rows,
-      late_students: lateStudents.rows
+      late_students: lateStudents.rows,
+      today_outings: todayOutings.rows,
+      today_going_homes: todayGoingHomes.rows
     });
 
   } catch (error) {

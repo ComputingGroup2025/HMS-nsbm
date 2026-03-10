@@ -1,11 +1,8 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import LoginCard from "../../components/LoginCard";
 
 function WardenLogin(){
-
-  const navigate = useNavigate();
 
   return(
 
@@ -18,13 +15,6 @@ function WardenLogin(){
         description="Access your hostel management tools and student records"
         icon="👨‍💼"
       />
-
-      <button
-        className="back-home-floating"
-        onClick={()=>navigate("/")}
-      >
-        ← Back to Home
-      </button>
 
     </div>
 
