@@ -11,10 +11,41 @@ const SecurityDashboard = () => {
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [searchId, setSearchId] = useState('');
+  const [searchTouched, setSearchTouched] = useState(false);
 
   useEffect(() => {
     fetchOutings();
   }, []);
+
+  const formatDateTime = (date, time) => {
+    if (!date && !time) return 'N/A';
+
+    try {
+      // Combine date and time if both are available
+      let dateTimeString;
+
+      if (date && time) {
+        dateTimeString = `${date}T${time}`;
+      } else {
+        dateTimeString = date || time;
+      }
+
+      const d = new Date(dateTimeString);
+
+      if (Number.isNaN(d.getTime())) return 'N/A';
+
+      return d.toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return 'N/A';
+    }
+  };
 
   const fetchOutings = async () => {
     try {
@@ -50,13 +81,16 @@ const SecurityDashboard = () => {
   if (loading) return <div className="loading">Loading...</div>;
 
   const filteredOutings = searchId
-    ? todayOutings.filter(o =>
-        o.student_id.toLowerCase().includes(searchId.toLowerCase())
-      )
+    ? todayOutings.filter((o) => {
+        if (o.student_id === undefined || o.student_id === null) return false;
+        const idString = String(o.student_id);
+        return idString.toLowerCase().includes(searchId.toLowerCase());
+      })
     : todayOutings;
 
   const readyForExit = filteredOutings.filter(o => o.status === 'approved');
   const currentlyOut = filteredOutings.filter(o => o.status === 'student_left');
+  const hasAnyResult = readyForExit.length > 0 || currentlyOut.length > 0;
 
   return (
     <Layout user={user}>
@@ -81,8 +115,16 @@ const SecurityDashboard = () => {
               type="text"
               placeholder="Enter student ID"
               value={searchId}
-              onChange={(e) => setSearchId(e.target.value)}
+              onChange={(e) => {
+                setSearchId(e.target.value);
+                if (!searchTouched) setSearchTouched(true);
+              }}
             />
+            {searchId && searchTouched && !hasAnyResult && (
+              <p className="security-empty search-feedback">
+                No approved or active outing found for this student ID.
+              </p>
+            )}
           </div>
         </div>
 
@@ -97,14 +139,21 @@ const SecurityDashboard = () => {
                   <div key={outing.id} className="outing-card">
                     <div className="outing-header">
                       <h3>{outing.student_id}</h3>
-                      <span className="student-id">Room {outing.room_number}</span>
+                      <span className="student-id">
+                        Room {outing.room_number}
+                      </span>
                     </div>
                     <div className="outing-details">
-                      <p><strong>Destination:</strong> {outing.destination}</p>
-                      <p>
-                        <strong>Leaving:</strong>{' '}
-                        {outing.leaving_date} {outing.leaving_time}
-                      </p>
+                      {outing.student_name && (
+                        <p>
+                          <strong>Name:</strong> {outing.student_name}
+                        </p>
+                      )}
+                      {outing.vehicle_number && (
+                        <p>
+                          <strong>Vehicle:</strong> {outing.vehicle_number}
+                        </p>
+                      )}
                     </div>
                     <button
                       onClick={() => markExit(outing.id)}
@@ -128,11 +177,25 @@ const SecurityDashboard = () => {
                   <div key={outing.id} className="outing-card">
                     <div className="outing-header">
                       <h3>{outing.student_id}</h3>
-                      <span className="student-id">Room {outing.room_number}</span>
+                      <span className="student-id">
+                        Room {outing.room_number}
+                      </span>
                     </div>
                     <div className="outing-details">
-                      <p><strong>Destination:</strong> {outing.destination}</p>
-                      <p><strong>Left At:</strong> {outing.left_time}</p>
+                      {outing.student_name && (
+                        <p>
+                          <strong>Name:</strong> {outing.student_name}
+                        </p>
+                      )}
+                      <p>
+                        <strong>Left At:</strong>{' '}
+                        {formatDateTime(outing.left_time, null)}
+                      </p>
+                      {outing.vehicle_number && (
+                        <p>
+                          <strong>Vehicle:</strong> {outing.vehicle_number}
+                        </p>
+                      )}
                     </div>
                     <button
                       onClick={() => markReturn(outing.id)}

@@ -85,21 +85,18 @@ exports.listTodayOutings = async (req, res) => {
   try {
 
     const result = await pool.query(
-      `SELECT id,
-              student_id,
-              room_number,
-              destination,
-              type AS reason,
-              leaving_date,
-              leaving_time,
-              return_date,
-              return_time,
-              status,
-              left_time,
-              arrival_time
-       FROM outing_requests
-       WHERE status IN ('approved','student_left')
-       ORDER BY leaving_date, leaving_time ASC`
+      `SELECT o.id,
+              u.student_id AS student_id,
+              u.name AS student_name,
+              o.room_number,
+              o.vehicle_number,
+              o.status,
+              o.left_time,
+              o.arrival_time
+       FROM outing_requests o
+       JOIN users u ON o.student_id = u.id
+       WHERE o.status IN ('approved','student_left')
+       ORDER BY o.leaving_date, o.leaving_time ASC`
     );
 
     res.json(result.rows);
