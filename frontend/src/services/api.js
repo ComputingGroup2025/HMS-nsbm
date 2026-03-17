@@ -10,6 +10,16 @@ const api = axios.create({
   }
 });
 
+let isRedirectingForAuthError = false;
+
+const getLoginRouteByRole = (role) => {
+  if (role === 'student') return '/student-login';
+  if (role === 'parent') return '/parent-login';
+  if (role === 'warden') return '/warden-login';
+  if (role === 'security') return '/security-login';
+  return '/';
+};
+
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
@@ -20,6 +30,32 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const statusCode = error.response?.status;
+    const message = String(error.response?.data?.message || '').toLowerCase();
+
+    const isTokenError =
+      statusCode === 401 ||
+      (statusCode === 403 && message.includes('token'));
+
+    if (isTokenError && !isRedirectingForAuthError) {
+      isRedirectingForAuthError = true;
+      const role = localStorage.getItem('role');
+      const loginRoute = getLoginRouteByRole(role);
+
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('user');
+
+      window.location.href = loginRoute;
+    }
+
     return Promise.reject(error);
   }
 );
@@ -103,9 +139,31 @@ export const registerSecurityByWarden = async (securityData) => {
   }
 };
 
+export const searchStudentAndParentByStudentId = async (studentId) => {
+  const response = await api.get(`/warden/search/${encodeURIComponent(studentId)}`);
+  return response.data;
+};
+
+export const removeStudentByStudentId = async (studentId) => {
+  const response = await api.delete(`/warden/remove-student/${encodeURIComponent(studentId)}`);
+  return response.data;
+};
+
+export const resetStudentParentPasswordsByStudentId = async (studentId, payload) => {
+  const response = await api.post(`/warden/reset-passwords/${encodeURIComponent(studentId)}`, payload);
+  return response.data;
+};
+
 // Warden dashboard API
 export const getWardenDashboard = async () => {
   const response = await api.get('/dashboard/warden');
+  return response.data;
+};
+
+export const getWardenPastSummariesByDate = async (date) => {
+  const response = await api.get('/dashboard/warden/past-summaries', {
+    params: { date }
+  });
   return response.data;
 };
 

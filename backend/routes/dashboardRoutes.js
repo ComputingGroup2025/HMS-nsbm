@@ -13,4 +13,11 @@ router.get(
   dashboardController.getWardenDashboard
 );
 
+router.get(
+  "/warden/past-summaries",
+  authenticate,
+  checkRole(["warden"]),
+  dashboardController.getWardenPastSummariesByDate
+);
+
 module.exports = router;

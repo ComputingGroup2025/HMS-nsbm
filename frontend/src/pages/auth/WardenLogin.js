@@ -13,6 +13,7 @@ function WardenLogin(){
       <LoginCard
         title="Warden Login"
         description="Access your hostel management tools and student records"
+        role="warden"
         icon="👨‍💼"
       />
 

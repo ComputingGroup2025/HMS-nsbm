@@ -7,11 +7,13 @@ function ParentLogin() {
 
   const [studentId, setStudentId] = useState("");
   const [parentPassword, setParentPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
 
     e.preventDefault();
+    setErrorMessage("");
 
     try {
       const deviceId =
@@ -55,7 +57,7 @@ function ParentLogin() {
 
     } catch (err) {
 
-      alert(err.message || "Login failed");
+      setErrorMessage(err.message || "Login failed");
 
     }
 
@@ -68,6 +70,13 @@ function ParentLogin() {
       <Navbar />
 
       <div className="login-page">
+
+        {errorMessage && (
+          <div className="login-top-error-message" role="alert" aria-live="polite">
+            <p className="login-top-error-title">Login failed</p>
+            <p className="login-top-error-text">{errorMessage}</p>
+          </div>
+        )}
 
         <div className="login-card">
 
@@ -89,7 +98,12 @@ function ParentLogin() {
               type="text"
               placeholder="Enter your child's Student ID (e.g., STU001)"
               value={studentId}
-              onChange={(e)=>setStudentId(e.target.value)}
+              onChange={(e)=>{
+                setStudentId(e.target.value);
+                if (errorMessage) {
+                  setErrorMessage("");
+                }
+              }}
               required
             />
 
@@ -99,7 +113,12 @@ function ParentLogin() {
               type="password"
               placeholder="********"
               value={parentPassword}
-              onChange={(e)=>setParentPassword(e.target.value)}
+              onChange={(e)=>{
+                setParentPassword(e.target.value);
+                if (errorMessage) {
+                  setErrorMessage("");
+                }
+              }}
               required
             />
 

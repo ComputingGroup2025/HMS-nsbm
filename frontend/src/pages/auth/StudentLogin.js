@@ -13,6 +13,7 @@ function StudentLogin(){
       <LoginCard
         title="Student Login"
         description="Access your hostel information, complaints, and notifications"
+        role="student"
         icon="👨‍🎓"
       />
 

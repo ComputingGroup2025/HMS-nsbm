@@ -7,7 +7,10 @@ const checkRole = require("../middleware/roleMiddleware");
 
 const {
   registerStudent,
-  registerParent
+  registerParent,
+  searchStudentAndParent,
+  removeStudent,
+  resetStudentParentPasswords
 } = require("../controllers/wardenController");
 
 // Warden-only registration endpoints
@@ -23,6 +26,27 @@ router.post(
   authenticate,
   checkRole(["warden"]),
   registerParent
+);
+
+router.get(
+  "/search/:studentId",
+  authenticate,
+  checkRole(["warden"]),
+  searchStudentAndParent
+);
+
+router.delete(
+  "/remove-student/:studentId",
+  authenticate,
+  checkRole(["warden"]),
+  removeStudent
+);
+
+router.post(
+  "/reset-passwords/:studentId",
+  authenticate,
+  checkRole(["warden"]),
+  resetStudentParentPasswords
 );
 
 // Warden approvals for outings
