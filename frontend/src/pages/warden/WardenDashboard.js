@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import {
   registerStudentByWarden,
   registerParentByWarden,
   registerSecurityByWarden,
+  searchStudentAndParentByStudentId,
+  removeStudentByStudentId,
+  resetStudentParentPasswordsByStudentId,
   getWardenDashboard,
+  getWardenPastSummariesByDate,
   wardenApproveOuting,
   wardenRejectOuting
 } from "../../services/api";
@@ -12,7 +17,9 @@ import "./WardenDashboard.css";
 
 function WardenDashboard() {
 
-  const [activeSection, setActiveSection] = useState("studentParent");
+  const navigate = useNavigate();
+
+  const [activeSection, setActiveSection] = useState("");
 
   const [studentForm, setStudentForm] = useState({
     full_name: "",
@@ -40,16 +47,47 @@ function WardenDashboard() {
   const [statusMessage, setStatusMessage] = useState("");
   const [statusType, setStatusType] = useState("");
 
+  const [searchStudentId, setSearchStudentId] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchResult, setSearchResult] = useState({
+    student: null,
+    parent: null
+  });
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [removeLoading, setRemoveLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetPasswordForm, setResetPasswordForm] = useState({
+    studentPassword: "",
+    parentPassword: ""
+  });
+  const [resetCredentials, setResetCredentials] = useState({
+    student_password: null,
+    parent_password: null
+  });
+
   const [dashboardData, setDashboardData] = useState({
     today_outings: [],
     today_going_homes: [],
     parent_pending: [],
-    warden_pending: []
+    warden_pending: [],
+    daily_summary: {
+      total_students_registered: 0,
+      students_outside_hostel: 0,
+      students_in_home_today: 0,
+      date: ""
+    }
   });
   const [loadingDashboard, setLoadingDashboard] = useState(true);
 
+  const [pastDate, setPastDate] = useState("");
+  const [pastLoading, setPastLoading] = useState(false);
+  const [pastData, setPastData] = useState({
+    past_outings: [],
+    past_going_homes: []
+  });
+
   useEffect(() => {
-    if (activeSection === "today") {
+    if (activeSection === "today" || activeSection === "") {
       fetchDashboard();
     }
   }, [activeSection]);
@@ -61,7 +99,13 @@ function WardenDashboard() {
         today_outings: data.today_outings || [],
         today_going_homes: data.today_going_homes || [],
         parent_pending: data.parent_pending || [],
-        warden_pending: data.warden_pending || []
+        warden_pending: data.warden_pending || [],
+        daily_summary: data.daily_summary || {
+          total_students_registered: 0,
+          students_outside_hostel: 0,
+          students_in_home_today: 0,
+          date: ""
+        }
       });
       setLoadingDashboard(false);
     } catch (error) {
@@ -138,6 +182,148 @@ function WardenDashboard() {
     setStatusMessage(message);
   };
 
+  const handleSearchSubmit = async (e) => {
+    e.preventDefault();
+
+    const studentId = searchStudentId.trim();
+
+    if (!studentId) {
+      showStatus("error", "Enter a student ID number to search");
+      return;
+    }
+
+    setSearchLoading(true);
+
+    try {
+      const data = await searchStudentAndParentByStudentId(studentId);
+      setSearchResult({
+        student: data.student || null,
+        parent: data.parent || null
+      });
+      setShowRemoveConfirm(false);
+      setResetPasswordForm({ studentPassword: "", parentPassword: "" });
+      setResetCredentials({
+        student_password: null,
+        parent_password: null
+      });
+      setStatusMessage("");
+      setStatusType("");
+    } catch (error) {
+      setSearchResult({ student: null, parent: null });
+      setShowRemoveConfirm(false);
+      showStatus("error", error.response?.data?.message || "Failed to search records");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleRemoveStudentClick = () => {
+    setShowRemoveConfirm(true);
+  };
+
+  const handleRemoveStudentCancel = () => {
+    setShowRemoveConfirm(false);
+  };
+
+  const handleRemoveStudentConfirm = async () => {
+    if (!searchResult.student?.student_id) {
+      return;
+    }
+
+    setRemoveLoading(true);
+
+    try {
+      const response = await removeStudentByStudentId(searchResult.student.student_id);
+      setSearchResult({ student: null, parent: null });
+      setSearchStudentId("");
+      setShowRemoveConfirm(false);
+      setResetPasswordForm({ studentPassword: "", parentPassword: "" });
+      setResetCredentials({
+        student_password: null,
+        parent_password: null
+      });
+      showStatus("success", response.message || "Student removed successfully");
+      fetchDashboard();
+    } catch (error) {
+      showStatus("error", error.response?.data?.message || "Failed to remove student");
+    } finally {
+      setRemoveLoading(false);
+    }
+  };
+
+  const handleResetPasswords = async () => {
+    if (!searchResult.student?.student_id) {
+      return;
+    }
+
+    if (!resetPasswordForm.studentPassword.trim()) {
+      showStatus("error", "Enter a new student password");
+      return;
+    }
+
+    if (searchResult.parent && !resetPasswordForm.parentPassword.trim()) {
+      showStatus("error", "Enter a new parent password");
+      return;
+    }
+
+    setResetLoading(true);
+
+    try {
+      const response = await resetStudentParentPasswordsByStudentId(
+        searchResult.student.student_id,
+        {
+          studentPassword: resetPasswordForm.studentPassword,
+          parentPassword: resetPasswordForm.parentPassword
+        }
+      );
+      setResetCredentials({
+        student_password: response.credentials?.student_password || null,
+        parent_password: response.credentials?.parent_password || null
+      });
+      showStatus("success", "Passwords updated successfully.");
+    } catch (error) {
+      showStatus("error", error.response?.data?.message || "Failed to reset passwords");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handlePastSearch = async (e) => {
+    e.preventDefault();
+
+    if (!pastDate) {
+      showStatus("error", "Please select a date");
+      return;
+    }
+
+    setPastLoading(true);
+
+    try {
+      const data = await getWardenPastSummariesByDate(pastDate);
+      setPastData({
+        past_outings: data.past_outings || [],
+        past_going_homes: data.past_going_homes || []
+      });
+      setStatusMessage("");
+      setStatusType("");
+    } catch (error) {
+      setPastData({
+        past_outings: [],
+        past_going_homes: []
+      });
+      showStatus("error", error.response?.data?.message || "Failed to load past summaries");
+    } finally {
+      setPastLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("user");
+    navigate("/warden-login");
+  };
+
   const handleStudentChange = (e) => {
     const { name, value } = e.target;
     setStudentForm((prev) => ({ ...prev, [name]: value }));
@@ -203,6 +389,14 @@ function WardenDashboard() {
     }
   };
 
+  const todayNewRequests = dashboardData.today_outings.filter(
+    (outing) => outing.status === "pending_warden"
+  );
+
+  const todayReturnedStudents = dashboardData.today_outings.filter(
+    (outing) => outing.status === "student_returned"
+  );
+
   return(
 
     <div className="warden-page">
@@ -211,20 +405,39 @@ function WardenDashboard() {
 
       <div className="warden-container">
 
-        <h1>Warden Registration Dashboard</h1>
+        <h1 className="h1-warden">Warden Dashboard</h1>
+
         <p className="warden-subtitle">
-          Register students, parents, and securities, then provide their generated login passwords.
+          Welcome to the Warden Dashboard. Here you can manage student and parent registrations, view and approve outing requests, and monitor daily hostel activities. Use the sidebar to navigate through different sections of the dashboard.
         </p>
 
         {statusMessage && (
-          <div className={`status-banner ${statusType}`}>
-            {statusMessage}
+          <div className="status-banner-wrapper">
+            <div className={`status-banner ${statusType}`}>
+              {statusMessage}
+            </div>
           </div>
         )}
 
         <div className="warden-layout">
 
           <aside className="warden-sidebar">
+            <button
+              type="button"
+              className={`sidebar-btn ${activeSection === "" ? "active" : ""}`}
+              onClick={() => setActiveSection("")}
+            >
+              Main Dashboard
+            </button>
+
+            <button
+              type="button"
+              className={`sidebar-btn ${activeSection === "search" ? "active" : ""}`}
+              onClick={() => setActiveSection("search")}
+            >
+              Search Student and Parent
+            </button>
+
             <button
               type="button"
               className={`sidebar-btn ${activeSection === "studentParent" ? "active" : ""}`}
@@ -248,9 +461,162 @@ function WardenDashboard() {
             >
               Today's Movements
             </button>
+
+            <button
+              type="button"
+              className={`sidebar-btn ${activeSection === "past" ? "active" : ""}`}
+              onClick={() => setActiveSection("past")}
+            >
+              Search Past Outings
+            </button>
+
+            <button
+              type="button"
+              className="sidebar-btn sidebar-logout-btn"
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
           </aside>
 
           <section className="warden-main-content">
+            {activeSection === "search" && (
+            <div className="registration-card search-card">
+                <h2>Search Student and Parent</h2>
+                <form onSubmit={handleSearchSubmit} className="search-form">
+                  <label>Student ID Number</label>
+                  <div className="search-input-row">
+                    <input
+                      type="text"
+                      value={searchStudentId}
+                      onChange={(e) => {
+                        setSearchStudentId(e.target.value);
+                        if (showRemoveConfirm) {
+                          setShowRemoveConfirm(false);
+                        }
+                      }}
+                      placeholder="Enter student ID (e.g., STU001)"
+                    />
+                    <button type="submit" className="primary-btn" disabled={searchLoading}>
+                      {searchLoading ? "Searching..." : "Search"}
+                    </button>
+                  </div>
+                </form>
+
+                {(searchResult.student || searchResult.parent) && (
+                  <>
+                    <div className="search-result-grid">
+                      <div className="search-result-card">
+                        <h3>Student Details</h3>
+                        {searchResult.student ? (
+                          <ul>
+                            <li><strong>Name:</strong> {searchResult.student.full_name}</li>
+                            <li><strong>Student ID:</strong> {searchResult.student.student_id}</li>
+                            <li><strong>Room Number:</strong> {searchResult.student.room_number}</li>
+                            <li><strong>Email:</strong> {searchResult.student.email}</li>
+                          </ul>
+                        ) : (
+                          <p className="search-empty">No student details found.</p>
+                        )}
+                      </div>
+
+                      <div className="search-result-card">
+                        <h3>Parent Details</h3>
+                        {searchResult.parent ? (
+                          <ul>
+                            <li><strong>Name:</strong> {searchResult.parent.parent_name}</li>
+                            <li><strong>Email:</strong> {searchResult.parent.email}</li>
+                            <li><strong>Student Name:</strong> {searchResult.parent.student_name}</li>
+                            <li><strong>Student ID:</strong> {searchResult.parent.student_id}</li>
+                            <li><strong>Phone Number:</strong> {searchResult.parent.phone_number}</li>
+                          </ul>
+                        ) : (
+                          <p className="search-empty">No parent details found.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {searchResult.student && (
+                      <div className="remove-student-section">
+                        <div className="reset-password-fields">
+                          <input
+                            type="text"
+                            placeholder="Enter new student password"
+                            value={resetPasswordForm.studentPassword}
+                            onChange={(e) =>
+                              setResetPasswordForm((prev) => ({
+                                ...prev,
+                                studentPassword: e.target.value
+                              }))
+                            }
+                          />
+                          <input
+                            type="text"
+                            placeholder="Enter new parent password"
+                            value={resetPasswordForm.parentPassword}
+                            onChange={(e) =>
+                              setResetPasswordForm((prev) => ({
+                                ...prev,
+                                parentPassword: e.target.value
+                              }))
+                            }
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          className="reset-password-btn"
+                          onClick={handleResetPasswords}
+                          disabled={resetLoading}
+                        >
+                          {resetLoading ? "Updating..." : "Set New Passwords"}
+                        </button>
+
+                        {(resetCredentials.student_password || resetCredentials.parent_password) && (
+                          <div className="reset-credentials-box">
+                            <p><strong>Student Password:</strong> {resetCredentials.student_password || "Not available"}</p>
+                            <p><strong>Parent Password:</strong> {resetCredentials.parent_password || "No parent account linked"}</p>
+                          </div>
+                        )}
+
+                        {!showRemoveConfirm ? (
+                          <button
+                            type="button"
+                            className="remove-student-btn"
+                            onClick={handleRemoveStudentClick}
+                          >
+                            Remove Student
+                          </button>
+                        ) : (
+                          <div className="remove-student-confirmation">
+                            <p>Are you sure you want to remove this student?</p>
+                            <div className="remove-student-actions">
+                              <button
+                                type="button"
+                                className="remove-confirm-yes"
+                                onClick={handleRemoveStudentConfirm}
+                                disabled={removeLoading}
+                              >
+                                {removeLoading ? "Removing..." : "Yes"}
+                              </button>
+                              <button
+                                type="button"
+                                className="remove-confirm-no"
+                                onClick={handleRemoveStudentCancel}
+                                disabled={removeLoading}
+                              >
+                                No
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+            </div>
+            )}
+
             {activeSection === "studentParent" && (
               <div className="registration-grid student-parent-grid">
 
@@ -422,14 +788,14 @@ function WardenDashboard() {
               </div>
             )}
 
-            {activeSection === "today" && (
-              <div className="today-grid">
+            {(activeSection === "today" || activeSection === "") && (
+              <div className="today-grid today-movements-grid">
                 <div className="today-card">
-                  <h2>Today's Outings</h2>
+                  <h2>New Requests</h2>
                   {loadingDashboard ? (
                     <p>Loading...</p>
-                  ) : dashboardData.today_outings.length === 0 ? (
-                    <p className="today-empty">No outings scheduled for today.</p>
+                  ) : todayNewRequests.length === 0 ? (
+                    <p className="today-empty">No new outing requests for today.</p>
                   ) : (
                     <table className="today-table">
                       <thead>
@@ -443,7 +809,7 @@ function WardenDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {dashboardData.today_outings.map((o) => (
+                        {todayNewRequests.map((o) => (
                           <tr key={o.id}>
                             <td>{o.name}</td>
                             <td>{o.student_id}</td>
@@ -455,24 +821,22 @@ function WardenDashboard() {
                               </span>
                             </td>
                             <td>
-                              {o.status === "pending_warden" && (
-                                <div className="warden-table-actions">
-                                  <button
-                                    type="button"
-                                    className="warden-action-btn reject"
-                                    onClick={() => handleWardenReject(o.id)}
-                                  >
-                                    Reject
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="warden-action-btn approve"
-                                    onClick={() => handleWardenApprove(o.id)}
-                                  >
-                                    Approve
-                                  </button>
-                                </div>
-                              )}
+                              <div className="warden-table-actions">
+                                <button
+                                  type="button"
+                                  className="warden-action-btn reject"
+                                  onClick={() => handleWardenReject(o.id)}
+                                >
+                                  Reject
+                                </button>
+                                <button
+                                  type="button"
+                                  className="warden-action-btn approve"
+                                  onClick={() => handleWardenApprove(o.id)}
+                                >
+                                  Approve
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -502,6 +866,155 @@ function WardenDashboard() {
                             <td>{o.name}</td>
                             <td>{o.student_id}</td>
                             <td>{formatDateTime(o.leaving_date, o.leaving_time)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                <div className="today-card returned-students-card">
+                  <h2>Returned Students</h2>
+                  {loadingDashboard ? (
+                    <p>Loading...</p>
+                  ) : todayReturnedStudents.length === 0 ? (
+                    <p className="today-empty">No returned students for today.</p>
+                  ) : (
+                    <table className="today-table">
+                      <thead>
+                        <tr>
+                          <th>Student</th>
+                          <th>Student ID</th>
+                          <th>Destination</th>
+                          <th>Leaving</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {todayReturnedStudents.map((o) => (
+                          <tr key={o.id}>
+                            <td>{o.name}</td>
+                            <td>{o.student_id}</td>
+                            <td>{o.destination}</td>
+                            <td>{formatDateTime(o.leaving_date, o.leaving_time)}</td>
+                            <td>
+                              <span className={`today-status-pill today-status-${o.status}`}>
+                                {statusLabel(o.status)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!activeSection && (
+              <div className="main-summary-section">
+                <h2>Today's Hostel Summary</h2>
+                <div className="main-summary-grid">
+                  <div className="main-summary-card">
+                    <p className="main-summary-label">Total Students Registered</p>
+                    <p className="main-summary-value">{dashboardData.daily_summary.total_students_registered}</p>
+                  </div>
+
+                  <div className="main-summary-card">
+                    <p className="main-summary-label">Students Outside Hostel</p>
+                    <p className="main-summary-value">{dashboardData.daily_summary.students_outside_hostel}</p>
+                  </div>
+
+                  <div className="main-summary-card">
+                    <p className="main-summary-label">Students in Home Today</p>
+                    <p className="main-summary-value">{dashboardData.daily_summary.students_in_home_today}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === "past" && (
+              <div className="today-grid past-summaries-grid">
+                <div className="today-card past-search-card">
+                  <h2>Search Past Outings</h2>
+                  <form onSubmit={handlePastSearch} className="search-form">
+                    <label>Select Date</label>
+                    <div className="search-input-row">
+                      <input
+                        type="date"
+                        value={pastDate}
+                        onChange={(e) => setPastDate(e.target.value)}
+                      />
+                      <button type="submit" className="primary-btn" disabled={pastLoading}>
+                        {pastLoading ? "Searching..." : "Search"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <div className="today-card">
+                  <h2>Past Outing Summaries</h2>
+                  {pastLoading ? (
+                    <p>Loading...</p>
+                  ) : pastData.past_outings.length === 0 ? (
+                    <p className="today-empty">No outing summaries found for selected date.</p>
+                  ) : (
+                    <table className="today-table">
+                      <thead>
+                        <tr>
+                          <th>Student</th>
+                          <th>Student ID</th>
+                          <th>Destination</th>
+                          <th>Leaving</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pastData.past_outings.map((o) => (
+                          <tr key={o.id}>
+                            <td>{o.name}</td>
+                            <td>{o.student_id}</td>
+                            <td>{o.destination}</td>
+                            <td>{formatDateTime(o.leaving_date, o.leaving_time)}</td>
+                            <td>
+                              <span className={`today-status-pill today-status-${o.status}`}>
+                                {statusLabel(o.status)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                <div className="today-card">
+                  <h2>Past Going Home Summaries</h2>
+                  {pastLoading ? (
+                    <p>Loading...</p>
+                  ) : pastData.past_going_homes.length === 0 ? (
+                    <p className="today-empty">No going home summaries found for selected date.</p>
+                  ) : (
+                    <table className="today-table">
+                      <thead>
+                        <tr>
+                          <th>Student</th>
+                          <th>Student ID</th>
+                          <th>Leaving</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pastData.past_going_homes.map((o) => (
+                          <tr key={o.id}>
+                            <td>{o.name}</td>
+                            <td>{o.student_id}</td>
+                            <td>{formatDateTime(o.leaving_date, o.leaving_time)}</td>
+                            <td>
+                              <span className={`today-status-pill today-status-${o.status}`}>
+                                {statusLabel(o.status)}
+                              </span>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
