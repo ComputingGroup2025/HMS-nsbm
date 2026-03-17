@@ -13,6 +13,7 @@ function SecurityLogin(){
       <LoginCard
         title="Security Login"
         description="Access your security management tools and surveillance systems"
+        role="security"
         icon="👨‍💼"
       />
 

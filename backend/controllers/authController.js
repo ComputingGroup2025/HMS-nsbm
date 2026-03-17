@@ -77,7 +77,13 @@ exports.login = async (req, res) => {
 
   try {
 
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
+
+    if (!role) {
+      return res.status(400).json({
+        message: "Role is required"
+      });
+    }
 
     const result = await pool.query(
       "SELECT * FROM users WHERE email=$1",
@@ -112,6 +118,12 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({
         message: "Invalid password"
+      });
+    }
+
+    if (accountRole !== role) {
+      return res.status(403).json({
+        message: "Invalid credentials for selected role"
       });
     }
 

@@ -2,6 +2,8 @@
 
   min-height:100vh;
 
+  position:relative;
+
   display:flex;
   justify-content:center;
   align-items:center;
@@ -110,6 +112,47 @@
 .login-card button:hover{
 
   background:#1d4ed8;
+}
+
+
+.login-top-error-message{
+
+  position:fixed;
+
+  top:112px;
+  left:50%;
+  transform:translateX(-50%);
+
+  width:min(560px, calc(100% - 32px));
+
+  background:#7f1d1d;
+  color:#fee2e2;
+
+  padding:12px 16px;
+  border-radius:10px;
+  border:1px solid #b91c1c;
+  box-shadow:0 10px 22px rgba(0,0,0,0.28);
+  z-index:1000;
+
+  line-height:1.4;
+}
+
+.login-top-error-title{
+
+  margin:0;
+
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:0.2px;
+  text-transform:uppercase;
+}
+
+.login-top-error-text{
+
+  margin:4px 0 0;
+
+  font-size:15px;
+  font-weight:500;
 }
 
 .login-help{
