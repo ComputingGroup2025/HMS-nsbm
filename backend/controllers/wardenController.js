@@ -414,3 +414,156 @@ exports.resetStudentParentPasswords = async (req, res) => {
  }
 
 };
+
+exports.searchStaffByName = async (req, res) => {
+
+ try {
+
+  const searchName = String(req.query?.name || "").trim();
+
+  if (!searchName) {
+    return res.status(400).json({
+      message: "Staff name is required"
+    });
+  }
+
+  const staffResult = await pool.query(
+    `SELECT
+      id,
+      name,
+      email,
+      role,
+      created_at
+     FROM users
+     WHERE role = 'security'
+       AND name ILIKE $1
+     ORDER BY name ASC`,
+    [`%${searchName}%`]
+  );
+
+  return res.json({
+    staff: staffResult.rows
+  });
+
+ } catch (err) {
+
+  console.log(err);
+
+  return res.status(500).json({
+   message:"Server error"
+  });
+
+ }
+
+};
+
+exports.resetStaffPassword = async (req, res) => {
+
+ try {
+
+  const staffId = Number(req.params.staffId);
+  const newPassword = String(req.body?.newPassword || "").trim();
+
+  if (!staffId || Number.isNaN(staffId)) {
+    return res.status(400).json({
+      message: "Valid staff ID is required"
+    });
+  }
+
+  if (!newPassword) {
+    return res.status(400).json({
+      message: "New password is required"
+    });
+  }
+
+  const staffResult = await pool.query(
+    "SELECT id FROM users WHERE id = $1 AND role = 'security'",
+    [staffId]
+  );
+
+  if (staffResult.rows.length === 0) {
+    return res.status(404).json({
+      message: "Security staff not found"
+    });
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await pool.query(
+    "UPDATE users SET password = $1 WHERE id = $2 AND role = 'security'",
+    [hashedPassword, staffId]
+  );
+
+  return res.json({
+    message: "Security password reset successfully",
+    credentials: {
+      security_password: newPassword
+    }
+  });
+
+ } catch (err) {
+
+  console.log(err);
+
+  return res.status(500).json({
+   message:"Server error"
+  });
+
+ }
+
+};
+
+exports.removeStaff = async (req, res) => {
+
+ try {
+
+  const staffId = Number(req.params.staffId);
+
+  if (!staffId || Number.isNaN(staffId)) {
+    return res.status(400).json({
+      message: "Valid staff ID is required"
+    });
+  }
+
+  await pool.query("BEGIN");
+
+  const staffResult = await pool.query(
+    "SELECT id FROM users WHERE id = $1 AND role = 'security'",
+    [staffId]
+  );
+
+  if (staffResult.rows.length === 0) {
+    await pool.query("ROLLBACK");
+    return res.status(404).json({
+      message: "Security staff not found"
+    });
+  }
+
+  await pool.query(
+    "UPDATE outing_history SET performed_by = NULL WHERE performed_by = $1",
+    [staffId]
+  );
+
+  await pool.query(
+    "DELETE FROM users WHERE id = $1 AND role = 'security'",
+    [staffId]
+  );
+
+  await pool.query("COMMIT");
+
+  return res.json({
+    message: "Security staff removed successfully"
+  });
+
+ } catch (err) {
+
+  await pool.query("ROLLBACK");
+  console.log(err);
+
+  return res.status(500).json({
+   message:"Server error"
+  });
+
+ }
+
+};
