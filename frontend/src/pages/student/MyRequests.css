@@ -1,87 +1,169 @@
-.requests-table{
-
-  margin-top:30px;
-
-  background:#1e293b;
-
-  padding:25px;
-
-  border-radius:12px;
-
-  box-shadow:0 8px 25px rgba(0,0,0,0.6);
+.requests-table {
+  margin-top: 22px;
+  background: var(--panel-soft);
+  border: 1px solid rgba(100, 116, 139, 0.34);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-soft);
+  overflow-x: auto;
 }
 
-table{
-
-  width:100%;
-
-  border-collapse:collapse;
-
-  color:white;
+.request-status-banner {
+  margin-top: 14px;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.86rem;
+  font-weight: 600;
 }
 
-th, td{
-
-  padding:12px;
-
-  text-align:left;
-
-  border-bottom:1px solid rgba(255,255,255,0.05);
+.request-status-banner.success {
+  background: rgba(34, 197, 94, 0.16);
+  border: 1px solid rgba(74, 222, 128, 0.45);
+  color: #86efac;
 }
 
-th{
-
-  color:#94a3b8;
-
-  font-weight:500;
+.request-status-banner.error {
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  color: #fca5a5;
 }
 
-/* Status Colors */
-
-.status{
-
-  padding:6px 12px;
-
-  border-radius:8px;
-
-  font-size:13px;
-
-  font-weight:500;
+.cancel-confirm-box {
+  margin-top: 14px;
+  background: var(--panel-soft);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.status.pending_parent{
-
-  background:#f59e0b33;
-  color:#fbbf24;
+.cancel-confirm-box p {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 600;
 }
 
-.status.pending_warden{
-
-  background:#6366f133;
-  color:#818cf8;
+.cancel-confirm-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.status.approved{
+.cancel-confirm-btn {
+  border: 1px solid rgba(148, 163, 184, 0.52);
+  background: transparent;
+  color: #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+}
 
-  background:#22c55e33;
-  color:#22c55e;
+.cancel-confirm-btn-danger {
+  border-color: rgba(248, 113, 113, 0.52);
+  background: rgba(220, 38, 38, 0.2);
+  color: #fecaca;
+}
+
+.cancel-confirm-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.requests-table table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  color: var(--text);
+}
+
+.requests-table th,
+.requests-table td {
+  padding: 11px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.requests-table th {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status.pending_parent {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+}
+
+.status.pending_warden {
+  background: rgba(99, 102, 241, 0.2);
+  color: #c7d2fe;
+}
+
+.status.approved {
+  background: rgba(34, 197, 94, 0.18);
+  color: #86efac;
 }
 
 .status.rejected_by_parent,
-.status.rejected_by_warden{
-
-  background:#ef444433;
-  color:#ef4444;
+.status.rejected_by_warden {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fecaca;
 }
 
-.status.student_left{
-
-  background:#06b6d433;
-  color:#06b6d4;
+.status.student_left {
+  background: rgba(6, 182, 212, 0.2);
+  color: #67e8f9;
 }
 
-.status.student_returned{
+.status.student_returned {
+  background: rgba(168, 85, 247, 0.2);
+  color: #d8b4fe;
+}
 
-  background:#a855f733;
-  color:#c084fc;
+.status.cancelled {
+  background: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+}
+
+.cancel-request-btn {
+  border: 1px solid rgba(248, 113, 113, 0.52);
+  background: rgba(220, 38, 38, 0.2);
+  color: #fecaca;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.cancel-request-btn:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.28);
+  border-color: rgba(248, 113, 113, 0.72);
+}
+
+.cancel-request-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.action-muted {
+  color: var(--text-subtle);
 }

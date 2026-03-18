@@ -92,6 +92,11 @@ export const getOutingHistory = async () => {
   return response.data;
 };
 
+export const cancelMyOuting = async (outingId) => {
+  const response = await api.delete(`/outings/cancel/${outingId}`);
+  return response.data;
+};
+
 // Parent approval API
 export const parentApproveOuting = async (outingId) => {
   const response = await api.put(`/parent/approve/${outingId}`);

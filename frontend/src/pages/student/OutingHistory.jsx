@@ -1,17 +1,41 @@
 import React, { useEffect, useState } from "react";
-import Navbar from "../../components/Navbar";
-import Sidebar from "../../components/Sidebar";
+import StudentLayout from "../../components/StudentLayout";
 import { getOutingHistory } from "../../services/api";
+import "./StudentDashboard.css";
 import "./OutingHistory.css";
 
 function OutingHistory() {
 
   const [history, setHistory] = useState([]);
+  const REFRESH_INTERVAL_MS = 5000;
 
   useEffect(() => {
-
     fetchHistory();
 
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchHistory();
+      }
+    }, REFRESH_INTERVAL_MS);
+
+    const handleWindowFocus = () => {
+      fetchHistory();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchHistory();
+      }
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("focus", handleWindowFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   const fetchHistory = async () => {
@@ -30,18 +54,11 @@ function OutingHistory() {
   };
 
   return (
-
-    <div className="dashboard-page">
-
-      <Navbar/>
-
-      <div className="dashboard-container">
-
-        <Sidebar/>
-
-        <div className="dashboard-content">
-
-          <h1>Outing History Timeline</h1>
+    <StudentLayout
+      activeTab="Outing History"
+      breadcrumb="STUDENT / HISTORY"
+      title="Outing History Timeline"
+    >
 
           {history.map((request)=>(
             
@@ -76,12 +93,7 @@ function OutingHistory() {
             </div>
 
           ))}
-
-        </div>
-
-      </div>
-
-    </div>
+    </StudentLayout>
 
   );
 

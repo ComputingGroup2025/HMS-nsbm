@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import Navbar from "../../components/Navbar";
-import Sidebar from "../../components/Sidebar";
+import StudentLayout from "../../components/StudentLayout";
 import { createOuting } from "../../services/api";
 import "./StudentDashboard.css";
 import "./CreateOuting.css";
@@ -65,18 +64,11 @@ function CreateOuting() {
   };
 
   return(
-
-    <div className="dashboard-page">
-
-      <Navbar/>
-
-      <div className="dashboard-container">
-
-        <Sidebar/>
-
-        <div className="dashboard-content">
-
-          <h1>Create Outing Request</h1>
+    <StudentLayout
+      activeTab="Create Outing"
+      breadcrumb="STUDENT / CREATE OUTING"
+      title="Create Outing Request"
+    >
 
           {statusMessage && (
             <div className={`outing-status-banner ${statusType}`}>
@@ -210,12 +202,7 @@ function CreateOuting() {
             </form>
 
           </div>
-
-        </div>
-
-      </div>
-
-    </div>
+    </StudentLayout>
 
   );
 

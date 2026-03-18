@@ -1,6 +1,7 @@
 import React from "react";
 import Navbar from "../../components/Navbar";
 import LoginCard from "../../components/LoginCard";
+import { FaUserGraduate } from "react-icons/fa6";
 
 function StudentLogin(){
 
@@ -14,7 +15,7 @@ function StudentLogin(){
         title="Student Login"
         description="Access your hostel information, complaints, and notifications"
         role="student"
-        icon="👨‍🎓"
+        icon={FaUserGraduate}
       />
 
     </div>

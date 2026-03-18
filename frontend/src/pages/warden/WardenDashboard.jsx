@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  FiGrid,
+  FiSearch,
+  FiUserPlus,
+  FiUsers,
+  FiActivity,
+  FiClock,
+  FiLogOut,
+} from "react-icons/fi";
 import Navbar from "../../components/Navbar";
 import {
   registerStudentByWarden,
@@ -21,6 +30,7 @@ import "./WardenDashboard.css";
 function WardenDashboard() {
 
   const navigate = useNavigate();
+  const REFRESH_INTERVAL_MS = 5000;
 
   const [activeSection, setActiveSection] = useState("");
 
@@ -98,9 +108,38 @@ function WardenDashboard() {
   });
 
   useEffect(() => {
-    if (activeSection === "today" || activeSection === "") {
-      fetchDashboard();
+    const shouldRefreshDashboard = activeSection === "today" || activeSection === "";
+
+    if (!shouldRefreshDashboard) {
+      return;
     }
+
+    fetchDashboard();
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchDashboard();
+      }
+    }, REFRESH_INTERVAL_MS);
+
+    const handleWindowFocus = () => {
+      fetchDashboard();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchDashboard();
+      }
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("focus", handleWindowFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [activeSection]);
 
   const fetchDashboard = async () => {
@@ -526,13 +565,49 @@ function WardenDashboard() {
     }
   };
 
-  const todayNewRequests = dashboardData.today_outings.filter(
-    (outing) => outing.status === "pending_warden"
-  );
+  const todayNewRequests =
+    Array.isArray(dashboardData.warden_pending) && dashboardData.warden_pending.length > 0
+      ? dashboardData.warden_pending
+      : (dashboardData.today_outings || []).filter(
+          (outing) => outing.status === "pending_warden"
+        );
 
   const todayReturnedStudents = dashboardData.today_outings.filter(
     (outing) => outing.status === "student_returned"
   );
+
+  const sectionMeta = {
+    "": {
+      breadcrumb: "Warden / Dashboard",
+      title: "Main Dashboard"
+    },
+    search: {
+      breadcrumb: "Warden / Search",
+      title: "Search Student and Parent"
+    },
+    studentParent: {
+      breadcrumb: "Warden / Registration",
+      title: "Register Student and Parent"
+    },
+    staff: {
+      breadcrumb: "Warden / Staff",
+      title: "Register Staff"
+    },
+    searchStaff: {
+      breadcrumb: "Warden / Staff Search",
+      title: "Search Staff"
+    },
+    today: {
+      breadcrumb: "Warden / Movements",
+      title: "Today's Movements"
+    },
+    past: {
+      breadcrumb: "Warden / History",
+      title: "Search Past Outings"
+    }
+  };
+
+  const currentSectionMeta = sectionMeta[activeSection] || sectionMeta[""];
 
   return(
 
@@ -541,13 +616,6 @@ function WardenDashboard() {
       <Navbar />
 
       <div className="warden-container">
-
-        <h1 className="h1-warden">Warden Dashboard</h1>
-
-        <p className="warden-subtitle">
-          Welcome to the Warden Dashboard. Here you can manage student and parent registrations, view and approve outing requests, and monitor daily hostel activities. Use the sidebar to navigate through different sections of the dashboard.
-        </p>
-
         {statusMessage && (
           <div className="status-banner-wrapper">
             <div className={`status-banner ${statusType}`}>
@@ -559,12 +627,19 @@ function WardenDashboard() {
         <div className="warden-layout">
 
           <aside className="warden-sidebar">
+            <div className="sidebar-title-wrap">
+              <h1 className="sidebar-title">Warden Dashboard</h1>
+            </div>
+
             <button
               type="button"
               className={`sidebar-btn ${activeSection === "" ? "active" : ""}`}
               onClick={() => setActiveSection("")}
             >
-              Main Dashboard
+              <span className="sidebar-btn-content">
+                <FiGrid aria-hidden="true" />
+                Main Dashboard
+              </span>
             </button>
 
             <button
@@ -572,7 +647,10 @@ function WardenDashboard() {
               className={`sidebar-btn ${activeSection === "search" ? "active" : ""}`}
               onClick={() => setActiveSection("search")}
             >
-              Search Student and Parent
+              <span className="sidebar-btn-content">
+                <FiSearch aria-hidden="true" />
+                Search Student and Parent
+              </span>
             </button>
 
             <button
@@ -580,7 +658,10 @@ function WardenDashboard() {
               className={`sidebar-btn ${activeSection === "studentParent" ? "active" : ""}`}
               onClick={() => setActiveSection("studentParent")}
             >
-              Register Student and Parent
+              <span className="sidebar-btn-content">
+                <FiUserPlus aria-hidden="true" />
+                Register Student and Parent
+              </span>
             </button>
 
             <button
@@ -588,7 +669,10 @@ function WardenDashboard() {
               className={`sidebar-btn ${activeSection === "staff" ? "active" : ""}`}
               onClick={() => setActiveSection("staff")}
             >
-              Register Staff
+              <span className="sidebar-btn-content">
+                <FiUsers aria-hidden="true" />
+                Register Staff
+              </span>
             </button>
 
             <button
@@ -596,7 +680,10 @@ function WardenDashboard() {
               className={`sidebar-btn ${activeSection === "searchStaff" ? "active" : ""}`}
               onClick={() => setActiveSection("searchStaff")}
             >
-              Search Staff
+              <span className="sidebar-btn-content">
+                <FiSearch aria-hidden="true" />
+                Search Staff
+              </span>
             </button>
 
             <button
@@ -604,8 +691,15 @@ function WardenDashboard() {
               className={`sidebar-btn sidebar-today-btn ${activeSection === "today" ? "active" : ""}`}
               onClick={() => setActiveSection("today")}
             >
-              <span className="today-sparkle-dot" aria-hidden="true" />
-              Today's Movements
+              <span className="sidebar-btn-content">
+                <FiActivity aria-hidden="true" />
+                Today's Movements
+              </span>
+              {todayNewRequests.length > 0 && (
+                <span className="sidebar-count-badge" aria-label={`${todayNewRequests.length} new requests`}>
+                  {todayNewRequests.length > 99 ? "99+" : todayNewRequests.length}
+                </span>
+              )}
             </button>
 
             <button
@@ -613,7 +707,10 @@ function WardenDashboard() {
               className={`sidebar-btn ${activeSection === "past" ? "active" : ""}`}
               onClick={() => setActiveSection("past")}
             >
-              Search Past Outings
+              <span className="sidebar-btn-content">
+                <FiClock aria-hidden="true" />
+                Search Past Outings
+              </span>
             </button>
 
             <button
@@ -621,11 +718,19 @@ function WardenDashboard() {
               className="sidebar-btn sidebar-logout-btn"
               onClick={handleLogout}
             >
-              Logout
+              <span className="sidebar-btn-content sidebar-logout-content">
+                <FiLogOut aria-hidden="true" />
+                Logout
+              </span>
             </button>
           </aside>
 
           <section className="warden-main-content">
+            <div className="main-content-header">
+              <p className="main-content-breadcrumb">{currentSectionMeta.breadcrumb}</p>
+              <h2 className="main-content-title">{currentSectionMeta.title}</h2>
+            </div>
+
             {activeSection === "search" && (
             <div className="registration-card search-card">
                 <h2>Search Student and Parent</h2>
@@ -1057,12 +1162,12 @@ function WardenDashboard() {
                         {todayNewRequests.map((o) => (
                           <tr key={o.id}>
                             <td>{o.name}</td>
-                            <td>{o.student_id}</td>
+                            <td>{o.student_id || "N/A"}</td>
                             <td>{o.destination}</td>
                             <td>{formatDateTime(o.leaving_date, o.leaving_time)}</td>
                             <td>
-                              <span className={`today-status-pill today-status-${o.status}`}>
-                                {statusLabel(o.status)}
+                              <span className={`today-status-pill today-status-${o.status || "pending_warden"}`}>
+                                {statusLabel(o.status || "pending_warden")}
                               </span>
                             </td>
                             <td>

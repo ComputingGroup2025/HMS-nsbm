@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaUsers } from "react-icons/fa6";
 import Navbar from "../../components/Navbar";
 import { parentLogin } from "../../services/api";
 import "../../components/LoginCard.css";
@@ -68,8 +69,8 @@ function ParentLogin() {
 
         <div className="login-card">
 
-          <div className="login-icon">
-            👨‍👩‍👧
+          <div className="login-icon" aria-hidden="true">
+            <FaUsers />
           </div>
 
           <h2>Parent Login</h2>
@@ -80,11 +81,13 @@ function ParentLogin() {
 
           <form onSubmit={handleLogin}>
 
-            <label>Student ID</label>
+            <label htmlFor="parent-student-id">Student ID</label>
 
             <input
+              id="parent-student-id"
               type="text"
               placeholder="Enter your child's Student ID (e.g., STU001)"
+              autoComplete="username"
               value={studentId}
               onChange={(e)=>{
                 setStudentId(e.target.value);
@@ -95,11 +98,13 @@ function ParentLogin() {
               required
             />
 
-            <label>Parent Password</label>
+            <label htmlFor="parent-password">Parent Password</label>
 
             <input
+              id="parent-password"
               type="password"
               placeholder="********"
+              autoComplete="current-password"
               value={parentPassword}
               onChange={(e)=>{
                 setParentPassword(e.target.value);
@@ -111,7 +116,7 @@ function ParentLogin() {
             />
 
             <button type="submit">
-              Login
+              Sign in
             </button>
 
           </form>

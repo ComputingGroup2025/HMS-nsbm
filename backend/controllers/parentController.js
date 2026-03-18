@@ -99,20 +99,30 @@ exports.listChildOutings = async (req, res) => {
     const internalUserId = userRow.rows[0].id;
 
     const outings = await pool.query(
-      `SELECT id,
-              student_id,
-              room_number,
-              destination,
-              type AS reason,
-              leaving_date,
-              leaving_time,
-              status,
-              left_time,
-              arrival_time,
-              created_at
-       FROM outing_requests
-       WHERE student_id = $1
-       ORDER BY created_at DESC`,
+      `SELECT o.id,
+              o.student_id,
+              o.room_number,
+              o.destination,
+              o.type AS reason,
+              o.leaving_date,
+              o.leaving_time,
+              CASE
+                WHEN last_history.action = 'cancelled_by_student' THEN 'cancelled'
+                ELSE o.status
+              END AS status,
+              o.left_time,
+              o.arrival_time,
+              o.created_at
+       FROM outing_requests o
+       LEFT JOIN LATERAL (
+         SELECT h.action
+         FROM outing_history h
+         WHERE h.outing_id = o.id
+         ORDER BY h.created_at DESC, h.id DESC
+         LIMIT 1
+       ) AS last_history ON TRUE
+       WHERE o.student_id = $1
+       ORDER BY o.created_at DESC`,
       [internalUserId]
     );
     
