@@ -138,7 +138,9 @@ Base URL: http://localhost:5000/api
 
 ## Environment Setup
 
-Create backend/.env:
+### Backend
+
+Create `backend/.env` (you can copy from `backend/.env.example`):
 
 ```env
 PORT=5000
@@ -151,6 +153,18 @@ DB_PORT=5432
 ```
 
 Make sure PostgreSQL is running and the required tables exist (users, students, parents, outing_requests, outing_history, etc.).
+
+### Frontend
+
+Create `frontend/.env` (you can copy from `frontend/.env.example`):
+
+```env
+REACT_APP_API_BASE_URL=http://localhost:5000/api
+```
+
+For Vercel frontend deployments, set this environment variable in the project settings:
+
+- `REACT_APP_API_BASE_URL=https://<your-backend-domain>/api`
 
 ## Installation & Run
 
