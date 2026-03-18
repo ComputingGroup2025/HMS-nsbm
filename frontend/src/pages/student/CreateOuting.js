@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
-import axios from "axios";
+import { createOuting } from "../../services/api";
 import "./StudentDashboard.css";
 import "./CreateOuting.css";
 
@@ -26,26 +26,18 @@ function CreateOuting() {
 
     try {
 
-      await axios.post(
-        "http://localhost:5000/api/outings/create",
-        {
-          student_id: studentId,
-          room_number: roomNumber,
-          destination,
-          reason: type === "home" ? "going_home" : "outing",
-          leaving_date: leavingDate,
-          leaving_time: leavingTime,
-          return_date: type === "home" ? null : returnDate,
-          return_time: type === "home" ? null : returnTime,
-          emergency,
-          vehicle_number: vehicleNumber
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        }
-      );
+      await createOuting({
+        student_id: studentId,
+        room_number: roomNumber,
+        destination,
+        reason: type === "home" ? "going_home" : "outing",
+        leaving_date: leavingDate,
+        leaving_time: leavingTime,
+        return_date: type === "home" ? null : returnDate,
+        return_time: type === "home" ? null : returnTime,
+        emergency,
+        vehicle_number: vehicleNumber
+      });
 
       setStatusType("success");
       setStatusMessage("Outing request submitted!");

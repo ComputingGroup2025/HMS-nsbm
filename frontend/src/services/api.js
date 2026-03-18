@@ -71,7 +71,17 @@ export const register = async (userData) => {
   return response.data;
 };
 
+export const parentLogin = async (credentials) => {
+  const response = await api.post('/auth/parent-login', credentials);
+  return response.data;
+};
+
 // Outing API
+export const createOuting = async (outingData) => {
+  const response = await api.post('/outings/create', outingData);
+  return response.data;
+};
+
 export const getMyOutings = async () => {
   const response = await api.get('/outings/my-requests');
   return response.data;

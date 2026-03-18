@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
+import { parentLogin } from "../../services/api";
 import "../../components/LoginCard.css";
 
 function ParentLogin() {
@@ -20,24 +21,11 @@ function ParentLogin() {
         localStorage.getItem("parentDeviceId") || crypto.randomUUID();
       localStorage.setItem("parentDeviceId", deviceId);
 
-      const res = await fetch("http://localhost:5000/api/auth/parent-login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          student_id: studentId,
-          parent_password: parentPassword,
-          device_id: deviceId
-        })
+      const data = await parentLogin({
+        student_id: studentId,
+        parent_password: parentPassword,
+        device_id: deviceId
       });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || "Login failed");
-      }
-
-      const data = await res.json();
 
       /* Save token and role */
       localStorage.setItem("token", data.token);
@@ -57,7 +45,7 @@ function ParentLogin() {
 
     } catch (err) {
 
-      setErrorMessage(err.message || "Login failed");
+      setErrorMessage(err.response?.data?.message || err.message || "Login failed");
 
     }
 
