@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import {
@@ -6,6 +6,9 @@ import {
   registerParentByWarden,
   registerSecurityByWarden,
   searchStudentAndParentByStudentId,
+  searchStaffByName,
+  resetStaffPassword,
+  removeStaff,
   removeStudentByStudentId,
   resetStudentParentPasswordsByStudentId,
   getWardenDashboard,
@@ -86,11 +89,28 @@ function WardenDashboard() {
     past_going_homes: []
   });
 
+  const [staffSearchName, setStaffSearchName] = useState("");
+  const [staffSearchLoading, setStaffSearchLoading] = useState(false);
+  const [staffResults, setStaffResults] = useState([]);
+  const [staffPasswordForm, setStaffPasswordForm] = useState({});
+  const [staffActionLoadingId, setStaffActionLoadingId] = useState(null);
+  const [staffRemoveConfirmId, setStaffRemoveConfirmId] = useState(null);
+  const [recentStaffPasswords, setRecentStaffPasswords] = useState({});
+  const staffPasswordTimersRef = useRef({});
+
   useEffect(() => {
     if (activeSection === "today" || activeSection === "") {
       fetchDashboard();
     }
   }, [activeSection]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(staffPasswordTimersRef.current).forEach((timerId) => {
+        clearTimeout(timerId);
+      });
+    };
+  }, []);
 
   const fetchDashboard = async () => {
     try {
@@ -324,6 +344,109 @@ function WardenDashboard() {
     navigate("/warden-login");
   };
 
+  const handleSearchStaff = async (e) => {
+    e.preventDefault();
+
+    const name = staffSearchName.trim();
+
+    if (!name) {
+      showStatus("error", "Enter a staff name to search");
+      return;
+    }
+
+    setStaffSearchLoading(true);
+
+    try {
+      const data = await searchStaffByName(name);
+      setStaffResults(data.staffs || []);
+      setStaffPasswordForm({});
+      setStaffRemoveConfirmId(null);
+      setStatusMessage("");
+      setStatusType("");
+    } catch (error) {
+      setStaffResults([]);
+      showStatus("error", error.response?.data?.message || "Failed to search staff");
+    } finally {
+      setStaffSearchLoading(false);
+    }
+  };
+
+  const handleStaffPasswordChange = (staffId, value) => {
+    setStaffPasswordForm((prev) => ({
+      ...prev,
+      [staffId]: value
+    }));
+  };
+
+  const handleChangeStaffPassword = async (staffId) => {
+    const newPassword = (staffPasswordForm[staffId] || "").trim();
+
+    if (!newPassword) {
+      showStatus("error", "Enter a new password for the selected security staff");
+      return;
+    }
+
+    setStaffActionLoadingId(staffId);
+
+    try {
+      const response = await resetStaffPassword(staffId, newPassword);
+      showStatus("success", response.message || "Security password updated successfully");
+
+      setRecentStaffPasswords((prev) => ({
+        ...prev,
+        [staffId]: newPassword
+      }));
+
+      if (staffPasswordTimersRef.current[staffId]) {
+        clearTimeout(staffPasswordTimersRef.current[staffId]);
+      }
+
+      staffPasswordTimersRef.current[staffId] = setTimeout(() => {
+        setRecentStaffPasswords((prev) => {
+          const updated = { ...prev };
+          delete updated[staffId];
+          return updated;
+        });
+        delete staffPasswordTimersRef.current[staffId];
+      }, 10000);
+
+      setStaffPasswordForm((prev) => ({
+        ...prev,
+        [staffId]: ""
+      }));
+    } catch (error) {
+      showStatus("error", error.response?.data?.message || "Failed to update security password");
+    } finally {
+      setStaffActionLoadingId(null);
+    }
+  };
+
+  const handleRemoveStaff = async (staffId) => {
+    setStaffActionLoadingId(staffId);
+
+    try {
+      const response = await removeStaff(staffId);
+      setStaffResults((prev) => prev.filter((staff) => staff.id !== staffId));
+      setStaffRemoveConfirmId(null);
+      setRecentStaffPasswords((prev) => {
+        const updated = { ...prev };
+        delete updated[staffId];
+        return updated;
+      });
+
+      if (staffPasswordTimersRef.current[staffId]) {
+        clearTimeout(staffPasswordTimersRef.current[staffId]);
+        delete staffPasswordTimersRef.current[staffId];
+      }
+
+      showStatus("success", response.message || "Security staff removed successfully");
+    } catch (error) {
+      showStatus("error", error.response?.data?.message || "Failed to remove security staff");
+    } finally {
+      setStaffActionLoadingId(null);
+    }
+  };
+
   const handleStudentChange = (e) => {
     const { name, value } = e.target;
     setStudentForm((prev) => ({ ...prev, [name]: value }));
@@ -456,10 +579,21 @@ function WardenDashboard() {
 
             <button
               type="button"
-              className={`sidebar-btn ${activeSection === "today" ? "active" : ""}`}
+              className={`sidebar-btn ${activeSection === "searchStaff" ? "active" : ""}`}
+              onClick={() => setActiveSection("searchStaff")}
+            >
+              Search Staff
+            </button>
+
+            <button
+              type="button"
+              className={`sidebar-btn today-live-btn ${activeSection === "today" ? "active today-live-active" : ""}`}
               onClick={() => setActiveSection("today")}
             >
-              Today's Movements
+              <span className="sidebar-live-label">
+                <span className="sidebar-live-dot" aria-hidden="true"></span>
+                Today's Movements
+              </span>
             </button>
 
             <button
@@ -784,6 +918,109 @@ function WardenDashboard() {
 
                     <button type="submit" className="primary-btn">Register Security</button>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {activeSection === "searchStaff" && (
+              <div className="registration-card search-card">
+                <h2>Search Staff</h2>
+                <form onSubmit={handleSearchStaff} className="search-form">
+                  <label>Staff Name</label>
+                  <div className="search-input-row">
+                    <input
+                      type="text"
+                      value={staffSearchName}
+                      onChange={(e) => setStaffSearchName(e.target.value)}
+                      placeholder="Enter staff name"
+                    />
+                    <button type="submit" className="primary-btn" disabled={staffSearchLoading}>
+                      {staffSearchLoading ? "Searching..." : "Search"}
+                    </button>
+                  </div>
+                </form>
+
+                <div className="staff-search-result">
+                  {staffSearchLoading ? (
+                    <p>Loading...</p>
+                  ) : staffResults.length === 0 ? (
+                    <p className="today-empty">No staff records found.</p>
+                  ) : (
+                    <table className="today-table">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Email</th>
+                          <th>Role</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {staffResults.map((staff) => (
+                          <tr key={staff.id}>
+                            <td>{staff.name}</td>
+                            <td>{staff.email || "-"}</td>
+                            <td>{staff.role}</td>
+                            <td>
+                              <div className="staff-actions-wrap">
+                                <input
+                                  type="password"
+                                  className="staff-password-input"
+                                  placeholder="New password"
+                                  value={staffPasswordForm[staff.id] || ""}
+                                  onChange={(e) => handleStaffPasswordChange(staff.id, e.target.value)}
+                                />
+                                <button
+                                  type="button"
+                                  className="staff-update-password-btn staff-mini-btn"
+                                  onClick={() => handleChangeStaffPassword(staff.id)}
+                                  disabled={staffActionLoadingId === staff.id}
+                                >
+                                  {staffActionLoadingId === staff.id ? "Updating..." : "Update Password"}
+                                </button>
+
+                                {staffRemoveConfirmId === staff.id ? (
+                                  <div className="staff-remove-confirm-inline">
+                                    <button
+                                      type="button"
+                                      className="remove-confirm-yes staff-mini-btn"
+                                      onClick={() => handleRemoveStaff(staff.id)}
+                                      disabled={staffActionLoadingId === staff.id}
+                                    >
+                                      {staffActionLoadingId === staff.id ? "Removing..." : "Yes"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="remove-confirm-no staff-mini-btn"
+                                      onClick={() => setStaffRemoveConfirmId(null)}
+                                      disabled={staffActionLoadingId === staff.id}
+                                    >
+                                      No
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="remove-student-btn staff-mini-btn"
+                                    onClick={() => setStaffRemoveConfirmId(staff.id)}
+                                    disabled={staffActionLoadingId === staff.id}
+                                  >
+                                    Remove Security
+                                  </button>
+                                )}
+
+                                {recentStaffPasswords[staff.id] && (
+                                  <p className="staff-temp-password">
+                                    Updated Password: {recentStaffPasswords[staff.id]} (visible for 10s)
+                                  </p>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             )}

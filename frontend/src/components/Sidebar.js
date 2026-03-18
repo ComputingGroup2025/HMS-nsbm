@@ -6,6 +6,13 @@ function Sidebar(){
 
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("user");
+    navigate("/student-login");
+  };
+
   return(
 
     <div className="sidebar">
@@ -28,7 +35,7 @@ function Sidebar(){
         Outing History
       </button>
 
-      <button className="logout">
+      <button className="logout" onClick={handleLogout}>
         Logout
       </button>
 

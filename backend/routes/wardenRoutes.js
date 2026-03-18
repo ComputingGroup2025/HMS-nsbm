@@ -9,8 +9,11 @@ const {
   registerStudent,
   registerParent,
   searchStudentAndParent,
+  searchStaffByName,
   removeStudent,
-  resetStudentParentPasswords
+  resetStudentParentPasswords,
+  resetStaffPassword,
+  removeStaff
 } = require("../controllers/wardenController");
 
 // Warden-only registration endpoints
@@ -33,6 +36,27 @@ router.get(
   authenticate,
   checkRole(["warden"]),
   searchStudentAndParent
+);
+
+router.get(
+  "/search-staff",
+  authenticate,
+  checkRole(["warden"]),
+  searchStaffByName
+);
+
+router.post(
+  "/reset-staff-password/:id",
+  authenticate,
+  checkRole(["warden"]),
+  resetStaffPassword
+);
+
+router.delete(
+  "/remove-staff/:id",
+  authenticate,
+  checkRole(["warden"]),
+  removeStaff
 );
 
 router.delete(
