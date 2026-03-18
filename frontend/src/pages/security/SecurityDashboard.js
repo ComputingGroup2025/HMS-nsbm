@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import {
   getTodayOutingsForSecurity
@@ -7,11 +8,19 @@ import api from '../../services/api';
 import './SecurityDashboard.css';
 
 const SecurityDashboard = () => {
+  const navigate = useNavigate();
   const [todayOutings, setTodayOutings] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [searchId, setSearchId] = useState('');
   const [searchTouched, setSearchTouched] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('user');
+    navigate('/security-login');
+  };
 
   useEffect(() => {
     fetchOutings();
@@ -208,6 +217,12 @@ const SecurityDashboard = () => {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="security-bottom-actions">
+          <button type="button" className="security-logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
         </div>
       </div>
     </Layout>
