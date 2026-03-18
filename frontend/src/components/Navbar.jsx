@@ -1,40 +1,32 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { FiHome } from "react-icons/fi";
 import "./Navbar.css";
 
 import logo from "../assets/images/NSBM-LOGO.png";
 
 function Navbar() {
-
   const navigate = useNavigate();
   const location = useLocation();
 
   const isHome = location.pathname === "/";
 
   return (
-
-    <div className="navbar">
-
+    <header className="navbar">
       <div className="navbar-center">
-
         <img
           src={logo}
           alt="NSBM"
           className="navbar-logo"
         />
-
-        <div>
-
+        <div className="navbar-branding">
           <h2 className="navbar-title">
             Hostel Management System
           </h2>
-
           <p className="navbar-subtitle">
-            Welcome to your hostel hub
+            NSBM Campus Portal
           </p>
-
         </div>
-
       </div>
 
       <div className="navbar-actions">
@@ -43,13 +35,12 @@ function Navbar() {
             className="back-home-btn"
             onClick={() => navigate("/")}
           >
-            ← Back to Home
+            <FiHome aria-hidden="true" />
+            <span className="back-home-label">Back to Home</span>
           </button>
         )}
-
       </div>
-
-    </div>
+    </header>
 
   );
 }

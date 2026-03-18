@@ -4,6 +4,56 @@ const logOutingHistory = require("../utils/logOutingHistory");
 const pool = require("../config/db");
 const bcrypt = require("bcrypt");
 
+const DUPLICATE_KEY_CODE = "23505";
+
+const syncTableSequence = async (client, tableName) => {
+  const allowedTables = new Set(["students", "parents", "users"]);
+
+  if (!allowedTables.has(tableName)) {
+    throw new Error(`Unsupported table for sequence sync: ${tableName}`);
+  }
+
+  await client.query(
+    `SELECT setval(
+      pg_get_serial_sequence('${tableName}', 'id'),
+      COALESCE((SELECT MAX(id) FROM ${tableName}), 0) + 1,
+      false
+    )`
+  );
+};
+
+const duplicateMessageByConstraint = (constraint, fallback) => {
+  if (constraint === "students_student_id_key") {
+    return "Student ID is already registered";
+  }
+
+  if (constraint === "students_email_key") {
+    return "Student email is already registered";
+  }
+
+  if (constraint === "users_email_key") {
+    return "User email is already registered";
+  }
+
+  if (constraint === "parents_email_key") {
+    return "Parent email is already registered";
+  }
+
+  if (constraint === "students_pkey") {
+    return "Student registration conflict. Please retry.";
+  }
+
+  if (constraint === "parents_pkey") {
+    return "Parent registration conflict. Please retry.";
+  }
+
+  if (constraint === "users_pkey") {
+    return "User registration conflict. Please retry.";
+  }
+
+  return fallback;
+};
+
 exports.wardenApprove = async (req, res) => {
 
   try {
@@ -74,6 +124,8 @@ exports.wardenReject = async (req, res) => {
 
 exports.registerStudent = async (req,res)=>{
 
+ const client = await pool.connect();
+
  try{
 
   const {
@@ -84,36 +136,55 @@ exports.registerStudent = async (req,res)=>{
    password
   } = req.body;
 
-  const hashedPassword = await bcrypt.hash(password,10);
+  const normalizedName = String(full_name || "").trim();
+  const normalizedStudentId = String(student_id || "").trim();
+  const normalizedRoom = String(room_number || "").trim();
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedPassword = String(password || "");
+
+  if (!normalizedName || !normalizedStudentId || !normalizedEmail || !normalizedPassword) {
+    return res.status(400).json({
+      message: "full_name, student_id, email, and password are required"
+    });
+  }
+
+  const hashedPassword = await bcrypt.hash(normalizedPassword,10);
+
+  await client.query("BEGIN");
+
+  await syncTableSequence(client, "students");
+  await syncTableSequence(client, "users");
 
   // Insert into students table
-  await pool.query(
+  await client.query(
     `INSERT INTO students
      (full_name,student_id,room_number,email,password)
      VALUES ($1,$2,$3,$4,$5)`,
     [
-      full_name,
-      student_id,
-      room_number,
-      email,
+      normalizedName,
+      normalizedStudentId,
+      normalizedRoom || null,
+      normalizedEmail,
       hashedPassword
     ]
   );
 
   // Also create corresponding row in users table for auth/foreign keys
-  await pool.query(
+  await client.query(
     `INSERT INTO users
      (name,email,password,role,student_id,parent_password)
      VALUES ($1,$2,$3,$4,$5,$6)`,
     [
-      full_name,
-      email,
+      normalizedName,
+      normalizedEmail,
       hashedPassword,
       "student",
-      student_id,
+      normalizedStudentId,
       null
     ]
   );
+
+  await client.query("COMMIT");
 
   res.json({
    message:"Student registered successfully"
@@ -122,17 +193,33 @@ exports.registerStudent = async (req,res)=>{
  }
  catch(err){
 
-  console.log(err);
+  await client.query("ROLLBACK");
 
-  res.status(500).json({
+  if (err.code === DUPLICATE_KEY_CODE) {
+    return res.status(409).json({
+      message: duplicateMessageByConstraint(
+        err.constraint,
+        "Student registration failed due to duplicate data"
+      )
+    });
+  }
+
+  console.error("registerStudent error:", err.message || err);
+
+  return res.status(500).json({
    message:"Server error"
   });
 
+ }
+ finally {
+  client.release();
  }
 
 };
 
 exports.registerParent = async (req,res)=>{
+
+ const client = await pool.connect();
 
  try{
 
@@ -145,21 +232,57 @@ exports.registerParent = async (req,res)=>{
    password
   } = req.body;
 
-  const hashedPassword = await bcrypt.hash(password,10);
+  const normalizedParentName = String(parent_name || "").trim();
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedStudentName = String(student_name || "").trim();
+  const normalizedStudentId = String(student_id || "").trim();
+  const normalizedPhone = String(phone_number || "").trim();
+  const normalizedPassword = String(password || "");
 
-  await pool.query(
+  if (!normalizedParentName || !normalizedStudentId || !normalizedPassword) {
+    return res.status(400).json({
+      message: "parent_name, student_id, and password are required"
+    });
+  }
+
+  if (!normalizedEmail) {
+    return res.status(400).json({
+      message: "Parent email is required"
+    });
+  }
+
+  const studentCheck = await client.query(
+    "SELECT id FROM students WHERE student_id = $1",
+    [normalizedStudentId]
+  );
+
+  if (studentCheck.rows.length === 0) {
+    return res.status(400).json({
+      message: "Student ID not found. Register the student first."
+    });
+  }
+
+  const hashedPassword = await bcrypt.hash(normalizedPassword,10);
+
+  await client.query("BEGIN");
+
+  await syncTableSequence(client, "parents");
+
+  await client.query(
    `INSERT INTO parents
    (parent_name,email,student_name,student_id,phone_number,password)
    VALUES ($1,$2,$3,$4,$5,$6)`,
    [
-    parent_name,
-    email,
-    student_name,
-    student_id,
-    phone_number,
+    normalizedParentName,
+    normalizedEmail,
+    normalizedStudentName || null,
+    normalizedStudentId,
+    normalizedPhone || null,
     hashedPassword
    ]
   );
+
+  await client.query("COMMIT");
 
   res.json({
    message:"Parent registered successfully"
@@ -168,12 +291,26 @@ exports.registerParent = async (req,res)=>{
  }
  catch(err){
 
-  console.log(err);
+  await client.query("ROLLBACK");
 
-  res.status(500).json({
+  if (err.code === DUPLICATE_KEY_CODE) {
+    return res.status(409).json({
+      message: duplicateMessageByConstraint(
+        err.constraint,
+        "Parent registration failed due to duplicate data"
+      )
+    });
+  }
+
+  console.error("registerParent error:", err.message || err);
+
+  return res.status(500).json({
    message:"Server error"
   });
 
+ }
+ finally {
+  client.release();
  }
 
 };

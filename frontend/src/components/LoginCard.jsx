@@ -3,7 +3,7 @@ import "./LoginCard.css";
 import { useNavigate } from "react-router-dom";
 import { login as loginRequest } from "../services/api";
 
-function LoginCard({ title, description, role, icon }) {
+function LoginCard({ title, description, role, icon: Icon }) {
 
   const navigate = useNavigate();
 
@@ -65,8 +65,8 @@ function LoginCard({ title, description, role, icon }) {
 
       <div className="login-card">
 
-        <div className="login-icon">
-          {icon}
+        <div className="login-icon" aria-hidden="true">
+          {Icon ? <Icon /> : null}
         </div>
 
         <h2>{title}</h2>
@@ -77,11 +77,13 @@ function LoginCard({ title, description, role, icon }) {
 
         <form onSubmit={handleLogin}>
 
-          <label>Email Address</label>
+          <label htmlFor={`${role}-email`}>Email Address</label>
 
           <input
+            id={`${role}-email`}
             type="email"
             placeholder="your.email@example.com"
+            autoComplete="email"
             value={email}
             onChange={(e)=>{
               setEmail(e.target.value);
@@ -92,11 +94,13 @@ function LoginCard({ title, description, role, icon }) {
             required
           />
 
-          <label>Password</label>
+          <label htmlFor={`${role}-password`}>Password</label>
 
           <input
+            id={`${role}-password`}
             type="password"
             placeholder="********"
+            autoComplete="current-password"
             value={password}
             onChange={(e)=>{
               setPassword(e.target.value);
@@ -108,7 +112,7 @@ function LoginCard({ title, description, role, icon }) {
           />
 
           <button type="submit">
-            Login
+            Sign in
           </button>
 
         </form>

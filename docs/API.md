@@ -112,6 +112,15 @@ Get current student's own requests.
 ### GET /outings/history
 Get current student's outing history timeline.
 
+### DELETE /outings/cancel/:id
+Cancel own request (student only).
+
+Notes:
+- Allowed only for cancellable states (`pending_parent`, `pending_warden`, `approved`).
+- Requests that already progressed (e.g. `student_left`) cannot be cancelled.
+- The request is preserved and marked as `cancelled` in API responses (soft-cancel model).
+- A `cancelled_by_student` event is added to outing history timeline.
+
 ---
 
 ## Parent Endpoints

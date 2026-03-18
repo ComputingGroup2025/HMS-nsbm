@@ -1,54 +1,63 @@
-.sidebar{
-
-  width:230px;
-  margin-left:54px;
-  height:calc(100vh - 100px);
-  background:#020617;
-  padding:24px 18px 28px;
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  border-right:1px solid rgba(15,23,42,0.9);
-  margin-right:28px;
-  flex-shrink:0;
-  box-shadow:10px 0 40px rgba(15,23,42,0.85);
-  border-radius:0 16px 16px 0;
+.sidebar {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--shadow-soft);
+  position: sticky;
+  top: 100px;
 }
 
-.sidebar h2{
-
-  color:#e5e7eb;
-  margin:0 0 16px;
-  font-size:18px;
-  letter-spacing:0.02em;
+.sidebar h2 {
+  color: #f8fafc;
+  margin: 0 0 8px;
+  font-size: 0.96rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.sidebar button{
-
-  background:transparent;
-  border:1px solid transparent;
-  color:#cbd5f5;
-  padding:11px 12px;
-  border-radius:9px;
-  cursor:pointer;
-  text-align:left;
-  font-size:14px;
-  font-weight:500;
-  transition:background 0.18s ease,border-color 0.18s ease,color 0.18s ease,transform 0.08s ease;
+.sidebar button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #cbd5e1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.18s ease;
 }
 
-.sidebar button:hover{
-
-  background:rgba(30,64,175,0.18);
-  border-color:rgba(59,130,246,0.45);
-  color:#e5e7eb;
-  transform:translateX(2px);
+.sidebar button:hover {
+  background: rgba(37, 99, 235, 0.14);
+  border-color: rgba(59, 130, 246, 0.36);
+  color: #e2e8f0;
 }
 
-.logout{
+.sidebar button.active {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(96, 165, 250, 0.55);
+  color: #dbeafe;
+}
 
-  margin-top:10px;
-  background:#b91c1c !important;
-  border-color:rgba(248,113,113,0.7) !important;
-  color:white !important;
+.logout {
+  margin-top: 6px;
+  background: rgba(220, 38, 38, 0.22) !important;
+  border-color: rgba(248, 113, 113, 0.65) !important;
+  color: #fee2e2 !important;
+}
+
+.logout:hover {
+  background: rgba(220, 38, 38, 0.32) !important;
+}
+
+@media (max-width: 980px) {
+  .sidebar {
+    position: static;
+  }
 }

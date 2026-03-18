@@ -73,10 +73,12 @@ exports.createOuting = async (req, res) => {
       outingType = "home";
     }
 
+    const initialStatus = outingType === "home" ? "approved" : "pending_parent";
+
     await pool.query(
       `INSERT INTO outing_requests
-      (student_id,room_number,destination,type,leaving_date,leaving_time,emergency)
-      VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      (student_id,room_number,destination,type,leaving_date,leaving_time,emergency,status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [
         internalUserId,
         room_number,
@@ -84,7 +86,8 @@ exports.createOuting = async (req, res) => {
         outingType,
         leaving_date,
         leaving_time,
-        emergency === true
+        emergency === true,
+        initialStatus
       ]
     );
 
@@ -115,21 +118,31 @@ exports.getMyOutings = async (req, res) => {
 
     // If no outings found, map from students table to users table
     let result = await pool.query(
-      `SELECT id,
-              student_id,
-              room_number,
-              destination,
-              type AS reason,
-              leaving_date,
-              leaving_time,
-              status,
-              emergency,
-              left_time,
-              arrival_time,
-              created_at
-       FROM outing_requests
-       WHERE student_id = $1
-       ORDER BY created_at DESC`,
+      `SELECT o.id,
+              o.student_id,
+              o.room_number,
+              o.destination,
+              o.type AS reason,
+              o.leaving_date,
+              o.leaving_time,
+              CASE
+                WHEN last_history.action = 'cancelled_by_student' THEN 'cancelled'
+                ELSE o.status
+              END AS status,
+              o.emergency,
+              o.left_time,
+              o.arrival_time,
+              o.created_at
+       FROM outing_requests o
+       LEFT JOIN LATERAL (
+         SELECT h.action
+         FROM outing_history h
+         WHERE h.outing_id = o.id
+         ORDER BY h.created_at DESC, h.id DESC
+         LIMIT 1
+       ) AS last_history ON TRUE
+       WHERE o.student_id = $1
+       ORDER BY o.created_at DESC`,
       [internalUserId]
     );
 
@@ -157,21 +170,31 @@ exports.getMyOutings = async (req, res) => {
       internalUserId = userRow.rows[0].id;
 
       result = await pool.query(
-        `SELECT id,
-                student_id,
-                room_number,
-                destination,
-                type AS reason,
-                leaving_date,
-                leaving_time,
-                status,
-                emergency,
-                left_time,
-                arrival_time,
-                created_at
-         FROM outing_requests
-         WHERE student_id = $1
-         ORDER BY created_at DESC`,
+        `SELECT o.id,
+                o.student_id,
+                o.room_number,
+                o.destination,
+                o.type AS reason,
+                o.leaving_date,
+                o.leaving_time,
+                CASE
+                  WHEN last_history.action = 'cancelled_by_student' THEN 'cancelled'
+                  ELSE o.status
+                END AS status,
+                o.emergency,
+                o.left_time,
+                o.arrival_time,
+                o.created_at
+         FROM outing_requests o
+         LEFT JOIN LATERAL (
+           SELECT h.action
+           FROM outing_history h
+           WHERE h.outing_id = o.id
+           ORDER BY h.created_at DESC, h.id DESC
+           LIMIT 1
+         ) AS last_history ON TRUE
+         WHERE o.student_id = $1
+         ORDER BY o.created_at DESC`,
         [internalUserId]
       );
     }
@@ -267,6 +290,7 @@ exports.getOutingHistory = async (req, res) => {
         parent_rejected: "Parent Rejected",
         warden_approved: "Warden Approved",
         warden_rejected: "Warden Rejected",
+        cancelled_by_student: "Cancelled by Student",
         student_left: "Student Left Hostel",
         student_returned: "Student Returned"
       };
@@ -277,6 +301,7 @@ exports.getOutingHistory = async (req, res) => {
         parent_rejected: "Parent rejected the outing request",
         warden_approved: "Warden approved the outing request",
         warden_rejected: "Warden rejected the outing request",
+        cancelled_by_student: "Student cancelled this request",
         student_left: "Security marked student as left the hostel",
         student_returned: "Security marked student as returned to the hostel"
       };
@@ -300,6 +325,128 @@ exports.getOutingHistory = async (req, res) => {
     console.log(err);
 
     res.status(500).json({
+      message: "Server error"
+    });
+
+  }
+
+};
+
+
+exports.cancelMyOuting = async (req, res) => {
+
+  try {
+
+    const requestId = Number(req.params.id);
+
+    if (!Number.isInteger(requestId) || requestId <= 0) {
+      return res.status(400).json({
+        message: "Invalid request id"
+      });
+    }
+
+    let internalUserId = req.user.id;
+
+    let ownershipCheck = await pool.query(
+      `SELECT id,
+              status,
+              left_time,
+              arrival_time,
+              (
+                SELECT h.action
+                FROM outing_history h
+                WHERE h.outing_id = outing_requests.id
+                ORDER BY h.created_at DESC, h.id DESC
+                LIMIT 1
+              ) AS last_action
+       FROM outing_requests
+       WHERE id = $1 AND student_id = $2`,
+      [requestId, internalUserId]
+    );
+
+    if (ownershipCheck.rows.length === 0) {
+      const studentRow = await pool.query(
+        "SELECT student_id FROM students WHERE id=$1",
+        [req.user.id]
+      );
+
+      if (studentRow.rows.length > 0) {
+        const studentCode = studentRow.rows[0].student_id;
+        const userRow = await pool.query(
+          "SELECT id FROM users WHERE student_id = $1",
+          [studentCode]
+        );
+
+        if (userRow.rows.length > 0) {
+          internalUserId = userRow.rows[0].id;
+          ownershipCheck = await pool.query(
+            `SELECT id,
+                    status,
+                    left_time,
+                    arrival_time,
+                    (
+                      SELECT h.action
+                      FROM outing_history h
+                      WHERE h.outing_id = outing_requests.id
+                      ORDER BY h.created_at DESC, h.id DESC
+                      LIMIT 1
+                    ) AS last_action
+             FROM outing_requests
+             WHERE id = $1 AND student_id = $2`,
+            [requestId, internalUserId]
+          );
+        }
+      }
+    }
+
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(404).json({
+        message: "Request not found"
+      });
+    }
+
+    const request = ownershipCheck.rows[0];
+
+    const nonCancelableStatuses = new Set([
+      "student_left",
+      "student_returned",
+      "rejected_by_parent",
+      "rejected_by_warden"
+    ]);
+
+    if (
+      request.last_action === "cancelled_by_student" ||
+      nonCancelableStatuses.has(request.status) ||
+      request.left_time ||
+      request.arrival_time
+    ) {
+      return res.status(400).json({
+        message: "This request can no longer be cancelled"
+      });
+    }
+
+    await pool.query(
+      `UPDATE outing_requests
+       SET status = 'rejected_by_parent'
+       WHERE id = $1 AND student_id = $2`,
+      [requestId, internalUserId]
+    );
+
+    await logOutingHistory(
+      requestId,
+      "cancelled_by_student",
+      req.user.id
+    );
+
+    return res.json({
+      message: "Request cancelled successfully"
+    });
+
+  } catch (err) {
+
+    console.log(err);
+
+    return res.status(500).json({
       message: "Server error"
     });
 

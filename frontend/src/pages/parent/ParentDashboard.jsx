@@ -13,6 +13,7 @@ const ParentDashboard = () => {
   const [outings, setOutings] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const REFRESH_INTERVAL_MS = 5000;
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -23,6 +24,31 @@ const ParentDashboard = () => {
 
   useEffect(() => {
     fetchOutings();
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchOutings();
+      }
+    }, REFRESH_INTERVAL_MS);
+
+    const handleWindowFocus = () => {
+      fetchOutings();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchOutings();
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const fetchOutings = async () => {
@@ -110,6 +136,7 @@ const ParentDashboard = () => {
     if (status === 'pending_parent') return 'Pending (Parent)';
     if (status === 'pending_warden') return 'Pending (Warden)';
     if (status === 'approved') return 'Approved';
+    if (status === 'cancelled') return 'Cancelled';
     if (status === 'rejected_by_parent') return 'Rejected by Parent';
     if (status === 'rejected_by_warden') return 'Rejected by Warden';
     return capitalize(status);

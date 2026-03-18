@@ -19,7 +19,7 @@ exports.getWardenDashboard = async (req, res) => {
 
     // Pending warden approvals
     const wardenPending = await pool.query(
-      `SELECT o.id, u.name, o.destination, o.leaving_date, o.leaving_time
+      `SELECT o.id, u.name, u.student_id, o.destination, o.leaving_date, o.leaving_time
        FROM outing_requests o
        JOIN users u ON o.student_id = u.id
        WHERE o.status = 'pending_warden'
@@ -47,7 +47,7 @@ exports.getWardenDashboard = async (req, res) => {
        ORDER BY o.left_time DESC`
     );
 
-    // Today's outings / approvals visible to warden
+    // Outings visible to warden (include +/- 1 day to avoid timezone edge mismatches)
     const todayOutings = await pool.query(
       `SELECT o.id,
               u.name,
@@ -59,12 +59,12 @@ exports.getWardenDashboard = async (req, res) => {
        FROM outing_requests o
        JOIN users u ON o.student_id = u.id
        WHERE o.type = 'outing'
-         AND o.leaving_date = CURRENT_DATE
+         AND o.leaving_date::date BETWEEN CURRENT_DATE - INTERVAL '1 day' AND CURRENT_DATE + INTERVAL '1 day'
          AND o.status IN ('pending_warden','approved','student_left','student_returned')
        ORDER BY o.leaving_time ASC`
     );
 
-    // Today's going homes / home-going notifications (no warden approval needed)
+    // Going-home notifications (include +/- 1 day to avoid timezone edge mismatches)
     const todayGoingHomes = await pool.query(
       `SELECT o.id,
               u.name,
@@ -75,7 +75,8 @@ exports.getWardenDashboard = async (req, res) => {
        FROM outing_requests o
        JOIN users u ON o.student_id = u.id
        WHERE o.type = 'home'
-         AND o.leaving_date = CURRENT_DATE
+         AND o.leaving_date::date BETWEEN CURRENT_DATE - INTERVAL '1 day' AND CURRENT_DATE + INTERVAL '1 day'
+         AND o.status IN ('approved', 'student_left', 'student_returned')
        ORDER BY o.leaving_time ASC`
     );
 
@@ -87,18 +88,15 @@ exports.getWardenDashboard = async (req, res) => {
     const studentsOutsideToday = await pool.query(
       `SELECT COUNT(DISTINCT o.student_id)::int AS students_outside
        FROM outing_requests o
-       WHERE o.leaving_date = CURRENT_DATE
-         AND o.status = 'student_left'
+       WHERE o.status = 'student_left'
          AND o.arrival_time IS NULL`
     );
 
-    const studentsInHomeToday = await pool.query(
-      `SELECT COUNT(DISTINCT o.student_id)::int AS students_in_home
-       FROM outing_requests o
-       WHERE o.type = 'home'
-         AND o.leaving_date = CURRENT_DATE
-         AND o.status IN ('approved', 'student_left')`
-    );
+    const studentsInHomeTodayCount = new Set(
+      todayGoingHomes.rows
+        .filter((row) => row.status === "approved" || row.status === "student_left")
+        .map((row) => row.student_id)
+    ).size;
 
     res.json({
       parent_pending: parentPending.rows,
@@ -110,7 +108,7 @@ exports.getWardenDashboard = async (req, res) => {
       daily_summary: {
         total_students_registered: totalStudents.rows[0]?.total_students || 0,
         students_outside_hostel: studentsOutsideToday.rows[0]?.students_outside || 0,
-        students_in_home_today: studentsInHomeToday.rows[0]?.students_in_home || 0,
+        students_in_home_today: studentsInHomeTodayCount,
         date: new Date().toISOString().split("T")[0]
       }
     });
@@ -172,7 +170,7 @@ exports.getWardenPastSummariesByDate = async (req, res) => {
        FROM outing_requests o
        JOIN users u ON o.student_id = u.id
        WHERE o.type = 'outing'
-         AND o.leaving_date = $1
+         AND o.leaving_date::date = $1::date
        ORDER BY o.leaving_time ASC`,
       [date]
     );
@@ -187,7 +185,7 @@ exports.getWardenPastSummariesByDate = async (req, res) => {
        FROM outing_requests o
        JOIN users u ON o.student_id = u.id
        WHERE o.type = 'home'
-         AND o.leaving_date = $1
+         AND o.leaving_date::date = $1::date
        ORDER BY o.leaving_time ASC`,
       [date]
     );

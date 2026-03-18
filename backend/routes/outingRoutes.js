@@ -28,4 +28,11 @@ router.get(
   outingController.getOutingHistory
 );
 
+router.delete(
+  "/cancel/:id",
+  authenticate,
+  checkRole(["student"]),
+  outingController.cancelMyOuting
+);
+
 module.exports = router;

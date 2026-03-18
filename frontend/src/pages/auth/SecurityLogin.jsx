@@ -1,6 +1,7 @@
 import React from "react";
 import Navbar from "../../components/Navbar";
 import LoginCard from "../../components/LoginCard";
+import { FaShieldHalved } from "react-icons/fa6";
 
 function SecurityLogin(){
 
@@ -14,7 +15,7 @@ function SecurityLogin(){
         title="Security Login"
         description="Access your security management tools and surveillance systems"
         role="security"
-        icon="👨‍💼"
+        icon={FaShieldHalved}
       />
 
     </div>

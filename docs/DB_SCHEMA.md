@@ -119,6 +119,9 @@ CREATE TABLE IF NOT EXISTS outing_requests (
 Notes:
 - `student_id` references `users.id` (internal ID), not the external student code.
 - Daily dashboards filter by `leaving_date = CURRENT_DATE`.
+- Current workflow behavior:
+  - `type='outing'` requests start as `pending_parent` (approval flow).
+  - `type='home'` requests are created as `approved` (inform-only, no parent/warden approval).
 
 ---
 

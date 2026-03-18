@@ -1,99 +1,68 @@
 import React from "react";
 import "./Home.css";
+import {
+  FiUser,
+  FiUsers,
+  FiUserCheck,
+  FiShield,
+} from "react-icons/fi";
 
 import Navbar from "../../components/Navbar";
 import RoleCard from "../../components/RoleCard";
 
 function Home() {
+  const currentYear = new Date().getFullYear();
 
   return (
-
     <div className="home">
+      <Navbar />
 
-      <Navbar/>
+      <main className="home-main">
+        <section className="home-hero">
+          <p className="hero-tag">NSBM Hostel Portal</p>
+          <h1>Select your role</h1>
+          <p className="subtitle">
+            Access the hostel management system with role-based tools and a
+            secure workflow.
+          </p>
 
-      <div className="home-body">
-
-        <h1>Select Your Role</h1>
-
-        <p className="subtitle">
-          Choose your role to access the hostel management system.
-        </p>
-
-        <div className="roles">
-
+          <div className="roles">
           <RoleCard
             title="Student"
-            description="Access your hostel information and requests"
+            description="Access hostel info and requests"
             color="linear-gradient(90deg,#3b82f6,#06b6d4)"
             route="/student-login"
-            icon="👩‍🎓"
+            icon={FiUser}
           />
 
           <RoleCard
             title="Parent"
-            description="Monitor your ward's hostel activities"
+            description="Track your ward's hostel activity"
             color="linear-gradient(90deg,#9333ea,#ec4899)"
             route="/parent-login"
-            icon="👨‍👩‍👧"
+            icon={FiUsers}
           />
 
           <RoleCard
             title="Warden"
-            description="Manage hostel operations and approvals"
+            description="Manage operations and approvals"
             color="linear-gradient(90deg,#f59e0b,#ea580c)"
             route="/warden-login"
-            icon="🛡"
+            icon={FiUserCheck}
           />
 
           <RoleCard
             title="Security"
-            description="Monitor entry and exit activities"
+            description="Monitor entry and exit"
             color="linear-gradient(90deg,#ef4444,#e11d48)"
             route="/security-login"
-            icon="🔒"
+            icon={FiShield}
           />
-
-        </div>
-
-      </div>
-
-      <div className="about-section">
-
-        <h2>About This System</h2>
-
-        <div className="about-grid">
-
-          <div>
-            <h4>🔒 Secure & Private</h4>
-            <p>Your data is protected with modern security.</p>
           </div>
+        </section>
 
-          <div>
-            <h4>⚡ Real-time Updates</h4>
-            <p>Instant notifications for hostel activities.</p>
-          </div>
-
-          <div>
-            <h4>📱 Easy to Use</h4>
-            <p>Simple interface for all users.</p>
-          </div>
-
-          <div>
-            <h4>💬 24/7 Support</h4>
-            <p>Support team available anytime.</p>
-          </div>
-
-        </div>
-
-      </div>
-
-      <footer>
-
-        © 2024 Hostel Management System. All rights reserved.
-
-      </footer>
-
+        <footer>© {currentYear} Hostel Management System. All rights reserved.</footer>
+      </main>
     </div>
   );
 }
