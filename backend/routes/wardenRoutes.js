@@ -9,9 +9,9 @@ const {
   registerStudent,
   registerParent,
   searchStudentAndParent,
-  searchStaffByName,
   removeStudent,
   resetStudentParentPasswords,
+  searchStaffByName,
   resetStaffPassword,
   removeStaff
 } = require("../controllers/wardenController");
@@ -38,27 +38,6 @@ router.get(
   searchStudentAndParent
 );
 
-router.get(
-  "/search-staff",
-  authenticate,
-  checkRole(["warden"]),
-  searchStaffByName
-);
-
-router.post(
-  "/reset-staff-password/:id",
-  authenticate,
-  checkRole(["warden"]),
-  resetStaffPassword
-);
-
-router.delete(
-  "/remove-staff/:id",
-  authenticate,
-  checkRole(["warden"]),
-  removeStaff
-);
-
 router.delete(
   "/remove-student/:studentId",
   authenticate,
@@ -71,6 +50,27 @@ router.post(
   authenticate,
   checkRole(["warden"]),
   resetStudentParentPasswords
+);
+
+router.get(
+  "/search-staff",
+  authenticate,
+  checkRole(["warden"]),
+  searchStaffByName
+);
+
+router.post(
+  "/reset-staff-password/:staffId",
+  authenticate,
+  checkRole(["warden"]),
+  resetStaffPassword
+);
+
+router.delete(
+  "/remove-staff/:staffId",
+  authenticate,
+  checkRole(["warden"]),
+  removeStaff
 );
 
 // Warden approvals for outings
