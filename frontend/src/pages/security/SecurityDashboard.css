@@ -11,6 +11,32 @@
   text-align:center;
 }
 
+.security-logout-btn{
+  width:fit-content;
+  background:#b91c1c;
+  border:1px solid rgba(248,113,113,0.7);
+  color:#ffffff;
+  border-radius:9px;
+  padding:9px 14px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.18s ease;
+}
+
+.security-logout-btn:hover{
+  background:#991b1b;
+  border-color:rgba(248,113,113,0.85);
+}
+
+.security-bottom-actions{
+  max-width:1200px;
+  margin:8px auto 0;
+  padding:0 20px;
+  display:flex;
+  justify-content:flex-end;
+}
+
 .security-top{
   display:flex;
   justify-content:space-between;

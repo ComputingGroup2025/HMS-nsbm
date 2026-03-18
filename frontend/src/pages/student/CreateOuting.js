@@ -17,6 +17,8 @@ function CreateOuting() {
   const [roomNumber, setRoomNumber] = useState("");
   const [returnDate, setReturnDate] = useState("");
   const [returnTime, setReturnTime] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [statusType, setStatusType] = useState("");
 
   const handleSubmit = async (e) => {
 
@@ -45,7 +47,8 @@ function CreateOuting() {
         }
       );
 
-      alert("Outing request submitted!");
+      setStatusType("success");
+      setStatusMessage("Outing request submitted!");
 
       setDestination("");
       setVehicleNumber("");
@@ -62,7 +65,8 @@ function CreateOuting() {
       console.error("Create outing error:", err.response || err);
       const message =
         err.response?.data?.message || "Failed to create request";
-      alert(message);
+      setStatusType("error");
+      setStatusMessage(message);
 
     }
 
@@ -81,6 +85,12 @@ function CreateOuting() {
         <div className="dashboard-content">
 
           <h1>Create Outing Request</h1>
+
+          {statusMessage && (
+            <div className={`outing-status-banner ${statusType}`}>
+              {statusMessage}
+            </div>
+          )}
 
           <div className="outing-card">
 

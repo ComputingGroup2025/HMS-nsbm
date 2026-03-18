@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import {
   getParentOutings,
@@ -8,9 +9,17 @@ import {
 import './ParentDashboard.css';
 
 const ParentDashboard = () => {
+  const navigate = useNavigate();
   const [outings, setOutings] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('user');
+    navigate('/parent-login');
+  };
 
   useEffect(() => {
     fetchOutings();
@@ -116,15 +125,20 @@ const ParentDashboard = () => {
               Review and manage your child's outing and home-going requests.
             </p>
           </div>
-          <div className="parent-summary">
-            <div className="summary-item">
-              <span className="summary-label">Pending</span>
-              <span className="summary-value">{pending.length}</span>
+          <div className="parent-header-right">
+            <div className="parent-summary">
+              <div className="summary-item">
+                <span className="summary-label">Pending</span>
+                <span className="summary-value">{pending.length}</span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">Total Requests</span>
+                <span className="summary-value">{outings.length}</span>
+              </div>
             </div>
-            <div className="summary-item">
-              <span className="summary-label">Total Requests</span>
-              <span className="summary-value">{outings.length}</span>
-            </div>
+            <button type="button" className="parent-logout-btn" onClick={handleLogout}>
+              Logout
+            </button>
           </div>
         </header>
 
