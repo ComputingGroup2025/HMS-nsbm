@@ -154,6 +154,23 @@ export const resetStudentParentPasswordsByStudentId = async (studentId, payload)
   return response.data;
 };
 
+export const searchStaffByName = async (name) => {
+  const response = await api.get('/warden/search-staff', {
+    params: { name }
+  });
+  return response.data;
+};
+
+export const resetStaffPassword = async (staffId, newPassword) => {
+  const response = await api.post(`/warden/reset-staff-password/${staffId}`, { newPassword });
+  return response.data;
+};
+
+export const removeStaff = async (staffId) => {
+  const response = await api.delete(`/warden/remove-staff/${staffId}`);
+  return response.data;
+};
+
 // Warden dashboard API
 export const getWardenDashboard = async () => {
   const response = await api.get('/dashboard/warden');
