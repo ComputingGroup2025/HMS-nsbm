@@ -46,7 +46,7 @@
 
 .status-banner.error {
   background: rgba(239, 68, 68, 0.14);
-  border: 1px solid rgba(248, 113, 113, 0.45);
+  border: 1px solid rgba(249, 108, 108, 0.45);
   color: #fca5a5;
 }
 
@@ -79,7 +79,7 @@
 .sidebar-title-wrap {
   padding: 4px 8px 10px;
   margin-bottom: 8px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  border-bottom: 1px solid rgba(139, 154, 174, 0.2);
 }
 
 .sidebar-title {
