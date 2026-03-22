@@ -191,6 +191,29 @@ npm run dev
 cd ../frontend
 npm start
 ```
+Before start the frontend make sure the package-lock.json 
+packages looks exactly like this,
+
+"packages": {
+    "": {
+      "name": "frontend",
+      "version": "0.1.0",
+      "dependencies": {
+        "@testing-library/dom": "^10.4.1",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.2",
+        "@testing-library/user-event": "^13.5.0",
+        "axios": "^1.13.6",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "react-icons": "^5.6.0",
+        "react-router-dom": "^7.13.1",
+        "react-scripts": "^5.0.1",
+        "web-vitals": "^2.1.4"
+
+		}
+
+Then
 
 Frontend: http://localhost:3000
 
