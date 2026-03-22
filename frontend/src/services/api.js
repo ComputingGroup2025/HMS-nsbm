@@ -12,14 +12,6 @@ const api = axios.create({
 
 let isRedirectingForAuthError = false;
 
-const getLoginRouteByRole = (role) => {
-  if (role === 'student') return '/student-login';
-  if (role === 'parent') return '/parent-login';
-  if (role === 'warden') return '/warden-login';
-  if (role === 'security') return '/security-login';
-  return '/';
-};
-
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
@@ -46,14 +38,12 @@ api.interceptors.response.use(
 
     if (isTokenError && !isRedirectingForAuthError) {
       isRedirectingForAuthError = true;
-      const role = localStorage.getItem('role');
-      const loginRoute = getLoginRouteByRole(role);
 
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       localStorage.removeItem('user');
 
-      window.location.href = loginRoute;
+      window.location.href = '/';
     }
 
     return Promise.reject(error);
