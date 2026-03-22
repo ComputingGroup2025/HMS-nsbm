@@ -231,3 +231,5 @@ Additional documentation:
 - docs/POSTMAN_COLLECTION.md - Postman environment and endpoint testing guide
 
 If needed, this README can be extended with SQL schema and seed instructions in a separate docs/ section.
+## Contributors
+- [Gayathma](https://github.com/gayathma2004-afk) - Initial contributions and updates.
